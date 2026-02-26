@@ -1,0 +1,42 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+data/
+
+# Build outputs
+dist/
+build/
+target/
+
+# Dependencies (handled by subproject .gitignore)
+node_modules/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Local config
+*.local
+
+# Images uploaded by user (keep sample images in repo)
+# uploads/
+*.pem
