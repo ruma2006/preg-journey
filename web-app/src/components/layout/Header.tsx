@@ -1,19 +1,18 @@
-import { Fragment } from 'react'
-import { Menu, Transition } from '@headlessui/react'
-import { useNavigate } from 'react-router-dom'
-import {
-  Bars3Icon,
-  BellIcon,
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon,
-  QuestionMarkCircleIcon,
-} from '@heroicons/react/24/outline'
-import clsx from 'clsx'
+import { alertService } from '@/services'
 import { useAuthStore } from '@/store/authStore'
 import { useTourStore } from '@/store/tourStore'
+import { Menu, Transition } from '@headlessui/react'
+import {
+    ArrowRightOnRectangleIcon,
+    Bars3Icon,
+    BellIcon,
+    QuestionMarkCircleIcon,
+    UserCircleIcon,
+} from '@heroicons/react/24/outline'
 import { useQuery } from '@tanstack/react-query'
-import { alertService } from '@/services'
+import clsx from 'clsx'
+import { Fragment } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -99,10 +98,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
             {/* User Menu */}
             <Menu as="div" className="relative" data-tour="header-user">
               <Menu.Button className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-white font-semibold text-sm">
-                    {user?.name.charAt(0).toUpperCase()}
-                  </span>
+                <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center shadow-md overflow-hidden">
+                  {user?.profileImageUrl ? (
+                    <img
+                      src={`http://localhost:8080/api${user.profileImageUrl}`}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-semibold text-sm">
+                      {user?.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-gray-900">{user?.name}</p>
@@ -137,20 +144,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       >
                         <UserCircleIcon className="mr-3 h-5 w-5 text-gray-400" />
                         Your Profile
-                      </button>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => navigate('/settings')}
-                        className={clsx(
-                          'flex items-center w-full px-4 py-2.5 text-sm text-gray-700 transition-colors',
-                          active && 'bg-gray-50'
-                        )}
-                      >
-                        <Cog6ToothIcon className="mr-3 h-5 w-5 text-gray-400" />
-                        Settings
                       </button>
                     )}
                   </Menu.Item>

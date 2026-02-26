@@ -1,20 +1,21 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import {
-  Login,
-  Dashboard,
-  Patients,
-  PatientDetail,
-  HealthChecks,
-  Consultations,
-  FollowUps,
-  Alerts,
-  Users,
-  Reports,
+    Alerts,
+    Consultations,
+    Dashboard,
+    FollowUps,
+    HealthChecks,
+    Login,
+    PatientDetail,
+    Patients,
+    Profile,
+    Reports,
+    Users,
 } from '@/pages'
 import { useAuthStore } from '@/store/authStore'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children }: Readonly<{ children: React.ReactNode }>) {
   const { isAuthenticated } = useAuthStore()
 
   if (!isAuthenticated) {
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/users" element={<Users />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       {/* Catch all */}

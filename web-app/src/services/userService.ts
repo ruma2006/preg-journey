@@ -1,5 +1,5 @@
-import api from './api'
 import { ApiResponse, PaginatedResponse, User, UserRegistrationRequest, UserRole } from '@/types'
+import api from './api'
 
 export const userService = {
   create: async (data: UserRegistrationRequest): Promise<User> => {
@@ -67,5 +67,27 @@ export const userService = {
     await api.post(`/users/${id}/change-password`, null, {
       params: { newPassword },
     })
+  },
+
+  // Current user profile methods
+  getMe: async (): Promise<User> => {
+    const response = await api.get<ApiResponse<User>>('/users/me')
+    return response.data.data
+  },
+
+  updateMe: async (data: Partial<User>): Promise<User> => {
+    const response = await api.put<ApiResponse<User>>('/users/me', data)
+    return response.data.data
+  },
+
+  uploadProfilePhoto: async (file: File): Promise<User> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post<ApiResponse<User>>('/users/me/photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data.data
   },
 }

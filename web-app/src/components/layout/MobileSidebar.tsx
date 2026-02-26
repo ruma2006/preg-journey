@@ -1,22 +1,15 @@
-import { Fragment } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
-import { NavLink } from 'react-router-dom'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import {
-  HomeIcon,
-  UserGroupIcon,
-  ClipboardDocumentListIcon,
-  PhoneIcon,
-  BellAlertIcon,
-  CalendarIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  UsersIcon,
-} from '@heroicons/react/24/outline'
-import clsx from 'clsx'
+import { AmmaRakshithaLogo, TelanganaLogo } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { UserRole } from '@/types'
-import { AmmaRakshithaLogo, TelanganaLogo } from '@/components/ui'
+import { Dialog, Transition } from '@headlessui/react'
+import {
+    BellAlertIcon,
+    CalendarIcon,
+    ChartBarIcon, ClipboardDocumentListIcon, HomeIcon, PhoneIcon, UserGroupIcon, UsersIcon, XMarkIcon
+} from '@heroicons/react/24/outline'
+import clsx from 'clsx'
+import { Fragment } from 'react'
+import { NavLink } from 'react-router-dom'
 
 interface NavItem {
   name: string
@@ -34,7 +27,6 @@ const navigation: NavItem[] = [
   { name: 'Alerts', href: '/alerts', icon: BellAlertIcon },
   { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: [UserRole.ADMIN, UserRole.MEDICAL_OFFICER, UserRole.MCH_OFFICER] },
   { name: 'Users', href: '/users', icon: UsersIcon, roles: [UserRole.ADMIN] },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, roles: [UserRole.ADMIN] },
 ]
 
 interface MobileSidebarProps {
@@ -145,10 +137,18 @@ export default function MobileSidebar({ open, onClose }: MobileSidebarProps) {
               {/* User Info */}
               <div className="flex-shrink-0 flex border-t border-primary-700/50 p-4">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center ring-2 ring-primary-400/30">
-                    <span className="text-white font-semibold">
-                      {user?.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center ring-2 ring-primary-400/30 overflow-hidden">
+                    {user?.profileImageUrl ? (
+                      <img
+                        src={`http://localhost:8080/api${user.profileImageUrl}`}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white font-semibold">
+                        {user?.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <div className="ml-3">
                     <p className="text-base font-medium text-white">{user?.name}</p>

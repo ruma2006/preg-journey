@@ -100,6 +100,7 @@ export interface AuthResponse {
   name: string;
   email: string;
   role: UserRole;
+  profileImageUrl?: string;
 }
 
 // User

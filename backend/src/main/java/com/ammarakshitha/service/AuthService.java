@@ -50,6 +50,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 
@@ -82,6 +83,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 
@@ -108,6 +110,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 }

@@ -51,10 +51,12 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
 
                 // User endpoints - doctors list is accessible to all authenticated users
                 .requestMatchers(HttpMethod.GET, "/v1/users/doctors").authenticated()
                 .requestMatchers(HttpMethod.GET, "/v1/users/help-desk").authenticated()
+                .requestMatchers("/v1/users/me/**").authenticated()
                 .requestMatchers("/v1/users/**").hasRole("ADMIN")
 
                 // Protected endpoints with role-based access

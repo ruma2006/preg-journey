@@ -1,19 +1,18 @@
-import { NavLink } from 'react-router-dom'
-import {
-  HomeIcon,
-  UserGroupIcon,
-  ClipboardDocumentListIcon,
-  PhoneIcon,
-  BellAlertIcon,
-  CalendarIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  UsersIcon,
-} from '@heroicons/react/24/outline'
-import clsx from 'clsx'
+import { AmmaRakshithaLogo, TelanganaLogo } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
 import { UserRole } from '@/types'
-import { AmmaRakshithaLogo, TelanganaLogo } from '@/components/ui'
+import {
+    BellAlertIcon,
+    CalendarIcon,
+    ChartBarIcon,
+    ClipboardDocumentListIcon,
+    HomeIcon,
+    PhoneIcon,
+    UserGroupIcon,
+    UsersIcon,
+} from '@heroicons/react/24/outline'
+import clsx from 'clsx'
+import { NavLink } from 'react-router-dom'
 
 interface NavItem {
   name: string
@@ -32,7 +31,6 @@ const navigation: NavItem[] = [
   { name: 'Alerts', href: '/alerts', icon: BellAlertIcon, tourId: 'sidebar-alerts' },
   { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: [UserRole.ADMIN, UserRole.MEDICAL_OFFICER, UserRole.MCH_OFFICER], tourId: 'sidebar-reports' },
   { name: 'Users', href: '/users', icon: UsersIcon, roles: [UserRole.ADMIN] },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, roles: [UserRole.ADMIN] },
 ]
 
 export default function Sidebar() {
@@ -94,10 +92,18 @@ export default function Sidebar() {
           {/* User Info */}
           <div className="flex-shrink-0 flex border-t border-primary-700/50 p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center ring-2 ring-primary-400/30">
-                <span className="text-white font-semibold text-sm">
-                  {user?.name.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center ring-2 ring-primary-400/30 overflow-hidden">
+                {user?.profileImageUrl ? (
+                  <img
+                    src={`http://localhost:8080/api${user.profileImageUrl}`}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-sm">
+                    {user?.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-white truncate max-w-[140px]">
