@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Button, Input } from '@/components/ui'
 import { healthCheckService, patientService, userService } from '@/services'
-import { HealthCheckRequest, Patient, User } from '@/types'
+import { HealthCheckRequest, HealthCheck, Patient, User } from '@/types'
 
 interface HealthCheckFormProps {
   patientId?: number
+  initialData?: HealthCheck
   onSuccess: () => void
 }
 
-export default function HealthCheckForm({ patientId, onSuccess }: HealthCheckFormProps) {
+export default function HealthCheckForm({ patientId, initialData, onSuccess }: HealthCheckFormProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [scheduleFollowUp, setScheduleFollowUp] = useState(false)
@@ -32,11 +33,51 @@ export default function HealthCheckForm({ patientId, onSuccess }: HealthCheckFor
     queryFn: userService.getHelpDeskUsers,
   })
 
+  // Set selected patient and form data when editing
+  useEffect(() => {
+    if (initialData) {
+      setSelectedPatient(initialData.patient)
+    }
+  }, [initialData])
+
   const {
     register,
     handleSubmit,
     formState: { errors: _errors },
-  } = useForm<HealthCheckRequest>()
+    reset,
+  } = useForm<HealthCheckRequest>({
+    defaultValues: initialData ? {
+      id: initialData.id,
+      patientId: initialData.patient.id,
+      bpSystolic: initialData.bpSystolic,
+      bpDiastolic: initialData.bpDiastolic,
+      pulseRate: initialData.pulseRate,
+      temperature: initialData.temperature,
+      respiratoryRate: initialData.respiratoryRate,
+      spo2: initialData.spo2,
+      hemoglobin: initialData.hemoglobin,
+      bloodSugarFasting: initialData.bloodSugarFasting,
+      bloodSugarPP: initialData.bloodSugarPP,
+      bloodSugarRandom: initialData.bloodSugarRandom,
+      weight: initialData.weight,
+      height: initialData.height,
+      fundalHeight: initialData.fundalHeight,
+      fetalHeartRate: initialData.fetalHeartRate,
+      fetalMovement: initialData.fetalMovement,
+      urineAlbumin: initialData.urineAlbumin,
+      urineSugar: initialData.urineSugar,
+      symptoms: initialData.symptoms,
+      swellingObserved: initialData.swellingObserved,
+      bleedingReported: initialData.bleedingReported,
+      headacheReported: initialData.headacheReported,
+      blurredVisionReported: initialData.blurredVisionReported,
+      abdominalPainReported: initialData.abdominalPainReported,
+      notes: initialData.notes,
+      recommendations: initialData.recommendations,
+      nextCheckDate: initialData.nextCheckDate,
+      checkDate: initialData.checkDate,
+    } : undefined,
+  })
 
   const mutation = useMutation({
     mutationFn: healthCheckService.perform,

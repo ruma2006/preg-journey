@@ -40,47 +40,94 @@ public class HealthCheckService {
     private final RiskAssessmentService riskAssessmentService;
     private final PatientService patientService;
 
+    @Transactional
     public HealthCheck performHealthCheck(HealthCheckRequest request, Long performedByUserId) {
         log.info("Performing health check for patient: {}", request.getPatientId());
 
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-
+        
         User performedBy = userRepository.findById(performedByUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        HealthCheck healthCheck = HealthCheck.builder()
-                .patient(patient)
-                .checkDate(request.getCheckDate() != null ? request.getCheckDate() : LocalDate.now())
-                .bpSystolic(request.getBpSystolic())
-                .bpDiastolic(request.getBpDiastolic())
-                .pulseRate(request.getPulseRate())
-                .temperature(request.getTemperature())
-                .respiratoryRate(request.getRespiratoryRate())
-                .spo2(request.getSpo2())
-                .hemoglobin(request.getHemoglobin())
-                .bloodSugarFasting(request.getBloodSugarFasting())
-                .bloodSugarPP(request.getBloodSugarPP())
-                .bloodSugarRandom(request.getBloodSugarRandom())
-                .weight(request.getWeight())
-                .height(request.getHeight())
-                .fundalHeight(request.getFundalHeight())
-                .fetalHeartRate(request.getFetalHeartRate())
-                .fetalMovement(request.getFetalMovement())
-                .urineAlbumin(request.getUrineAlbumin())
-                .urineSugar(request.getUrineSugar())
-                .symptoms(request.getSymptoms())
-                .swellingObserved(request.getSwellingObserved())
-                .bleedingReported(request.getBleedingReported())
-                .headacheReported(request.getHeadacheReported())
-                .blurredVisionReported(request.getBlurredVisionReported())
-                .abdominalPainReported(request.getAbdominalPainReported())
-                .notes(request.getNotes())
-                .recommendations(request.getRecommendations())
-                .nextCheckDate(request.getNextCheckDate())
-                .performedBy(performedBy)
-                .build();
-
+        
+        HealthCheck healthCheck = null;
+        Optional<HealthCheck> existingHealthCheckOpt =  Optional.empty();
+        // If there is an existing health check ID provided, we check if it exists and belongs to the same patient. If it does, we update that record instead of creating a new one.
+        if(request.getId() != null) {
+			log.info("Health check ID provided in request: {}. Checking if it exists for patient: {} ", request.getId(), patient.getId());
+			existingHealthCheckOpt = healthCheckRepository
+					.findById(request.getId());  
+        }
+		if(existingHealthCheckOpt.isPresent()) {
+			log.info("Existing health check found for patient: {} on date: {}. Updating existing record. id {} ", patient.getMotherId(), request.getCheckDate(), existingHealthCheckOpt.get().getId());
+			HealthCheck existingHealthCheck = existingHealthCheckOpt.get();
+			existingHealthCheck.setPerformedBy(performedBy);
+			existingHealthCheck.setId(request.getId());
+			existingHealthCheck.setCheckDate(request.getCheckDate() != null ? request.getCheckDate() : LocalDate.now());
+			existingHealthCheck.setBpSystolic(request.getBpSystolic());
+			existingHealthCheck.setBpDiastolic(request.getBpDiastolic());
+			existingHealthCheck.setPulseRate(request.getPulseRate());
+			existingHealthCheck.setTemperature(request.getTemperature());
+			existingHealthCheck.setRespiratoryRate(request.getRespiratoryRate());
+			existingHealthCheck.setSpo2(request.getSpo2());
+			existingHealthCheck.setHemoglobin(request.getHemoglobin());
+			existingHealthCheck.setBloodSugarFasting(request.getBloodSugarFasting());
+			existingHealthCheck.setBloodSugarPP(request.getBloodSugarPP());
+			existingHealthCheck.setBloodSugarRandom(request.getBloodSugarRandom());
+			existingHealthCheck.setWeight(request.getWeight());
+			existingHealthCheck.setHeight(request.getHeight());
+			existingHealthCheck.setFundalHeight(request.getFundalHeight());
+			existingHealthCheck.setFetalHeartRate(request.getFetalHeartRate());
+			existingHealthCheck.setFetalMovement(request.getFetalMovement());
+			existingHealthCheck.setUrineAlbumin(request.getUrineAlbumin());
+			existingHealthCheck.setUrineSugar(request.getUrineSugar());
+			existingHealthCheck.setSymptoms(request.getSymptoms());
+			existingHealthCheck.setSwellingObserved(request.getSwellingObserved());
+			existingHealthCheck.setBleedingReported(request.getBleedingReported());
+			existingHealthCheck.setHeadacheReported(request.getHeadacheReported());
+			existingHealthCheck.setBlurredVisionReported(request.getBlurredVisionReported());
+			existingHealthCheck.setAbdominalPainReported(request.getAbdominalPainReported());
+			existingHealthCheck.setNotes(request.getNotes());
+			existingHealthCheck.setRecommendations(request.getRecommendations());
+			existingHealthCheck.setNextCheckDate(request.getNextCheckDate());
+			
+			healthCheck = healthCheckRepository.save(existingHealthCheck);
+	
+        }
+        else {
+        	healthCheck = HealthCheck.builder()
+                    .patient(patient)
+                    .checkDate(request.getCheckDate() != null ? request.getCheckDate() : LocalDate.now())
+                    .bpSystolic(request.getBpSystolic())
+                    .bpDiastolic(request.getBpDiastolic())
+                    .pulseRate(request.getPulseRate())
+                    .temperature(request.getTemperature())
+                    .respiratoryRate(request.getRespiratoryRate())
+                    .spo2(request.getSpo2())
+                    .hemoglobin(request.getHemoglobin())
+                    .bloodSugarFasting(request.getBloodSugarFasting())
+                    .bloodSugarPP(request.getBloodSugarPP())
+                    .bloodSugarRandom(request.getBloodSugarRandom())
+                    .weight(request.getWeight())
+                    .height(request.getHeight())
+                    .fundalHeight(request.getFundalHeight())
+                    .fetalHeartRate(request.getFetalHeartRate())
+                    .fetalMovement(request.getFetalMovement())
+                    .urineAlbumin(request.getUrineAlbumin())
+                    .urineSugar(request.getUrineSugar())
+                    .symptoms(request.getSymptoms())
+                    .swellingObserved(request.getSwellingObserved())
+                    .bleedingReported(request.getBleedingReported())
+                    .headacheReported(request.getHeadacheReported())
+                    .blurredVisionReported(request.getBlurredVisionReported())
+                    .abdominalPainReported(request.getAbdominalPainReported())
+                    .notes(request.getNotes())
+                    .recommendations(request.getRecommendations())
+                    .nextCheckDate(request.getNextCheckDate())
+                    .performedBy(performedBy)
+                    .build();
+        }
+        
         // Perform risk assessment
         RiskAssessmentService.RiskAssessmentResult riskResult =
                 riskAssessmentService.assessRisk(healthCheck, patient);

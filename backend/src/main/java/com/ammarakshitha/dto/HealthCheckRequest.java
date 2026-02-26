@@ -14,6 +14,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HealthCheckRequest {
+	
+	private Long id; // Required for updates, ignored for creates
 
     @NotNull(message = "Patient ID is required")
     private Long patientId;

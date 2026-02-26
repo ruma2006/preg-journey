@@ -249,6 +249,7 @@ export interface HealthCheck {
 }
 
 export interface HealthCheckRequest {
+  id: number; // Include ID for updates, can be optional for creation
   patientId: number;
   checkDate?: string;
   bpSystolic?: number;

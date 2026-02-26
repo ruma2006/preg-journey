@@ -16,8 +16,11 @@ import {
   TableLoading,
   RiskBadge,
   Modal,
+  EditButton,
+  DeleteButton,
 } from '@/components/ui'
 import { healthCheckService } from '@/services'
+import { HealthCheck } from '@/types'
 import HealthCheckForm from '@/components/health-check/HealthCheckForm'
 
 const PAGE_SIZE = 10
@@ -26,6 +29,7 @@ export default function HealthChecks() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [selectedHealthCheck, setSelectedHealthCheck] = useState<HealthCheck | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const page = parseInt(searchParams.get('page') || '0')
@@ -42,6 +46,7 @@ export default function HealthChecks() {
 
   const handleSuccess = () => {
     setShowCreateModal(false)
+    setSelectedHealthCheck(null)
     refetch()
   }
 
@@ -144,6 +149,7 @@ export default function HealthChecks() {
                 <TableCell header>Hemoglobin</TableCell>
                 <TableCell header>Risk Score</TableCell>
                 <TableCell header>Risk Level</TableCell>
+                <TableCell header>Action</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -153,7 +159,7 @@ export default function HealthChecks() {
                 filteredHealthChecks.map((check) => (
                   <TableRow
                     key={check.id}
-                    onClick={() => navigate(`/patients/${check.patient.id}`)}
+                    // onClick={() => navigate(`/patients/${check.patient.id}`)}
                   >
                     <TableCell>
                       <div>
@@ -177,6 +183,15 @@ export default function HealthChecks() {
                     </TableCell>
                     <TableCell>
                       <RiskBadge level={check.riskLevel} />
+                    </TableCell>
+                    <TableCell>
+                      <EditButton tooltip="Edit Health Check" onClick={() => {
+                        setSelectedHealthCheck(check)
+                        setShowCreateModal(true)
+                      }}/>
+                      <DeleteButton tooltip="Delete Health Check" onClick={() => {
+                        // Implement delete functionality here
+                      }}/>
                     </TableCell>
                   </TableRow>
                 ))
@@ -223,11 +238,14 @@ export default function HealthChecks() {
       {/* Health Check Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Perform Health Check"
+        onClose={() => {
+          setShowCreateModal(false)
+          setSelectedHealthCheck(null)
+        }}
+        title={selectedHealthCheck ? "Edit Health Check" : "Perform Health Check"}
         size="xl"
       >
-        <HealthCheckForm onSuccess={handleSuccess} />
+        <HealthCheckForm initialData={selectedHealthCheck || undefined} onSuccess={handleSuccess} />
       </Modal>
     </div>
   )

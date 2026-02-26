@@ -23,6 +23,8 @@ public interface HealthCheckRepository extends JpaRepository<HealthCheck, Long> 
     List<HealthCheck> findByPatientIdOrderByCheckDateDesc(Long patientId);
 
     Optional<HealthCheck> findTopByPatientIdOrderByCheckDateDesc(Long patientId);
+    
+    Optional<HealthCheck> findById(Long id);
 
     // Risk level queries
     List<HealthCheck> findByRiskLevel(RiskLevel riskLevel);
