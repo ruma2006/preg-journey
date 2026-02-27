@@ -196,6 +196,13 @@ export default function PatientDetail() {
         previousComplicationsDetails: patient.previousComplicationsDetails,
         medicalHistory: patient.medicalHistory,
         allergies: patient.allergies,
+        // Previous Pregnancy Details
+        hadCSectionDelivery: patient.hadCSectionDelivery,
+        hadNormalDelivery: patient.hadNormalDelivery,
+        hadAbortion: patient.hadAbortion,
+        hadOtherPregnancy: patient.hadOtherPregnancy,
+        otherPregnancyDetails: patient.otherPregnancyDetails,
+        totalKidsBorn: patient.totalKidsBorn,
       })
       setShowEditModal(true)
     }
@@ -397,6 +404,45 @@ export default function PatientDetail() {
                 <p className="text-sm text-gray-600 mt-1">{patient.previousComplicationsDetails}</p>
               )}
             </div>
+
+            {/* Previous Pregnancy Details - Show only when para >= 1 */}
+            {patient.para && patient.para >= 1 && (
+              <div className="border-t pt-3">
+                <p className="text-sm text-gray-500 mb-2">Previous Pregnancy Types</p>
+                <div className="flex flex-wrap gap-2">
+                  {patient.hadNormalDelivery && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Normal Delivery
+                    </span>
+                  )}
+                  {patient.hadCSectionDelivery && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      C-Section
+                    </span>
+                  )}
+                  {patient.hadAbortion && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                      Abortion
+                    </span>
+                  )}
+                  {patient.hadOtherPregnancy && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Other: {patient.otherPregnancyDetails || 'N/A'}
+                    </span>
+                  )}
+                  {!patient.hadNormalDelivery && !patient.hadCSectionDelivery && !patient.hadAbortion && !patient.hadOtherPregnancy && (
+                    <span className="text-sm text-gray-500">Not specified</span>
+                  )}
+                </div>
+                {patient.totalKidsBorn !== undefined && patient.totalKidsBorn !== null && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">Total Kids Born</p>
+                    <p className="font-medium">{patient.totalKidsBorn}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <p className="text-sm text-gray-500">Medical History</p>
               <p className="font-medium">{patient.medicalHistory || 'None reported'}</p>
@@ -912,6 +958,102 @@ export default function PatientDetail() {
           {/* Previous Complications */}
           <div className="border-t pt-4 mt-4">
             <h4 className="text-sm font-medium text-gray-700 mb-3">Previous Complications & Medical History</h4>
+            
+            {/* Previous Pregnancy Details - Show only when para >= 1 */}
+            {editData.para && editData.para >= 1 && (
+              <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h5 className="text-sm font-medium text-purple-900 mb-3">Previous Pregnancy Details</h5>
+                <p className="text-xs text-purple-700 mb-3">
+                  Select all types of previous pregnancies (you can select multiple)
+                </p>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editHadNormalDelivery"
+                        className="w-4 h-4 text-purple-600 rounded"
+                        checked={editData.hadNormalDelivery || false}
+                        onChange={(e) => setEditData({ ...editData, hadNormalDelivery: e.target.checked })}
+                      />
+                      <label htmlFor="editHadNormalDelivery" className="text-sm text-gray-700">
+                        Normal Delivery
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editHadCSectionDelivery"
+                        className="w-4 h-4 text-purple-600 rounded"
+                        checked={editData.hadCSectionDelivery || false}
+                        onChange={(e) => setEditData({ ...editData, hadCSectionDelivery: e.target.checked })}
+                      />
+                      <label htmlFor="editHadCSectionDelivery" className="text-sm text-gray-700">
+                        C-Section
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editHadAbortion"
+                        className="w-4 h-4 text-purple-600 rounded"
+                        checked={editData.hadAbortion || false}
+                        onChange={(e) => setEditData({ ...editData, hadAbortion: e.target.checked })}
+                      />
+                      <label htmlFor="editHadAbortion" className="text-sm text-gray-700">
+                        Abortion
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editHadOtherPregnancy"
+                        className="w-4 h-4 text-purple-600 rounded"
+                        checked={editData.hadOtherPregnancy || false}
+                        onChange={(e) => setEditData({ ...editData, hadOtherPregnancy: e.target.checked })}
+                      />
+                      <label htmlFor="editHadOtherPregnancy" className="text-sm text-gray-700">
+                        Other
+                      </label>
+                    </div>
+                  </div>
+
+                  {editData.hadOtherPregnancy && (
+                    <div>
+                      <label className="label">Specify Other Pregnancy Type</label>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Please specify..."
+                        value={editData.otherPregnancyDetails || ''}
+                        onChange={(e) => setEditData({ ...editData, otherPregnancyDetails: e.target.value })}
+                        maxLength={200}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="label">Total Number of Kids Born</label>
+                    <input
+                      type="number"
+                      className="input"
+                      min="0"
+                      max="4"
+                      placeholder="Including twins/multiples"
+                      value={editData.totalKidsBorn || ''}
+                      onChange={(e) => setEditData({ ...editData, totalKidsBorn: parseInt(e.target.value) || undefined })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total children born from all previous pregnancies (max 4)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <input

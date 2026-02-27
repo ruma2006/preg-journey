@@ -73,4 +73,19 @@ public class PatientRegistrationRequest {
     private String medicalHistory;
 
     private String allergies;
+
+    // Previous Pregnancy Details (shown when para >= 1)
+    private Boolean hadCSectionDelivery;
+
+    private Boolean hadNormalDelivery;
+
+    private Boolean hadAbortion;
+
+    private Boolean hadOtherPregnancy;
+
+    private String otherPregnancyDetails;
+
+    @Min(value = 0, message = "Total kids born must be non-negative")
+    @Max(value = 4, message = "Total kids born cannot exceed 4")
+    private Integer totalKidsBorn;
 }

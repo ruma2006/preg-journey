@@ -1,9 +1,9 @@
-import { useForm } from 'react-hook-form'
-import { useMutation } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
 import { Button, Input, Select } from '@/components/ui'
 import { patientService } from '@/services'
 import { PatientRegistrationRequest } from '@/types'
+import { useMutation } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 
 interface PatientRegistrationFormProps {
   onSuccess: () => void
@@ -39,6 +39,8 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
   } = useForm<PatientRegistrationRequest>()
 
   const lmpDate = watch('lmpDate')
+  const para = watch('para')
+  const hadOtherPregnancy = watch('hadOtherPregnancy')
 
   // Auto-calculate EDD when LMP changes (280 days from LMP)
   const calculateEDD = (lmp: string) => {
@@ -312,6 +314,98 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
       {/* Medical History */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Medical History</h3>
+        
+        {/* Previous Pregnancy Details - Show only when para >= 1 */}
+        {para && parseInt(String(para)) >= 1 && (
+          <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <h4 className="text-sm font-medium text-purple-900 mb-3">Previous Pregnancy Details</h4>
+            <p className="text-xs text-purple-700 mb-3">
+              Please select all types of previous pregnancies (you can select multiple)
+            </p>
+            
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hadNormalDelivery"
+                    {...register('hadNormalDelivery')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="hadNormalDelivery" className="text-sm text-gray-700">
+                    Normal Delivery
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hadCSectionDelivery"
+                    {...register('hadCSectionDelivery')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="hadCSectionDelivery" className="text-sm text-gray-700">
+                    C-Section
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hadAbortion"
+                    {...register('hadAbortion')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="hadAbortion" className="text-sm text-gray-700">
+                    Abortion
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hadOtherPregnancy"
+                    {...register('hadOtherPregnancy')}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="hadOtherPregnancy" className="text-sm text-gray-700">
+                    Other
+                  </label>
+                </div>
+              </div>
+
+              {hadOtherPregnancy && (
+                <div>
+                  <Input
+                    label="Specify Other Pregnancy Type"
+                    placeholder="Please specify..."
+                    {...register('otherPregnancyDetails')}
+                    maxLength={200}
+                  />
+                </div>
+              )}
+
+              <div>
+                <Input
+                  label="Total Number of Kids Born"
+                  type="number"
+                  min={0}
+                  max={4}
+                  placeholder="Including twins/multiples from previous pregnancies"
+                  {...register('totalKidsBorn', {
+                    min: { value: 0, message: 'Cannot be negative' },
+                    max: { value: 4, message: 'Maximum 4 kids allowed' }
+                  })}
+                  error={errors.totalKidsBorn?.message}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter total children born from all previous pregnancies (max 4)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <input

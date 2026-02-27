@@ -83,6 +83,12 @@ public class PatientService {
                 .previousComplicationsDetails(request.getPreviousComplicationsDetails())
                 .medicalHistory(request.getMedicalHistory())
                 .allergies(request.getAllergies())
+                .hadCSectionDelivery(request.getHadCSectionDelivery())
+                .hadNormalDelivery(request.getHadNormalDelivery())
+                .hadAbortion(request.getHadAbortion())
+                .hadOtherPregnancy(request.getHadOtherPregnancy())
+                .otherPregnancyDetails(request.getOtherPregnancyDetails())
+                .totalKidsBorn(request.getTotalKidsBorn())
                 .registrationDate(LocalDate.now())
                 .registeredBy(registeredBy)
                 .status(PatientStatus.ACTIVE)
@@ -174,17 +180,66 @@ public class PatientService {
         if (updateRequest.getResidence() != null) {
             patient.setResidence(updateRequest.getResidence());
         }
+        if (updateRequest.getDistrict() != null) {
+            patient.setDistrict(updateRequest.getDistrict());
+        }
+        if (updateRequest.getMandal() != null) {
+            patient.setMandal(updateRequest.getMandal());
+        }
+        if (updateRequest.getVillage() != null) {
+            patient.setVillage(updateRequest.getVillage());
+        }
+        if (updateRequest.getPincode() != null) {
+            patient.setPincode(updateRequest.getPincode());
+        }
         if (updateRequest.getMobileNumber() != null) {
             patient.setMobileNumber(updateRequest.getMobileNumber());
         }
         if (updateRequest.getAlternateMobile() != null) {
             patient.setAlternateMobile(updateRequest.getAlternateMobile());
         }
+        if (updateRequest.getEmail() != null) {
+            patient.setEmail(updateRequest.getEmail());
+        }
+        if (updateRequest.getGravida() != null) {
+            patient.setGravida(updateRequest.getGravida());
+        }
+        if (updateRequest.getPara() != null) {
+            patient.setPara(updateRequest.getPara());
+        }
+        if (updateRequest.getBloodGroup() != null) {
+            patient.setBloodGroup(updateRequest.getBloodGroup());
+        }
+        if (updateRequest.getHasPreviousComplications() != null) {
+            patient.setHasPreviousComplications(updateRequest.getHasPreviousComplications());
+        }
+        if (updateRequest.getPreviousComplicationsDetails() != null) {
+            patient.setPreviousComplicationsDetails(updateRequest.getPreviousComplicationsDetails());
+        }
         if (updateRequest.getMedicalHistory() != null) {
             patient.setMedicalHistory(updateRequest.getMedicalHistory());
         }
         if (updateRequest.getAllergies() != null) {
             patient.setAllergies(updateRequest.getAllergies());
+        }
+        // Handle previous pregnancy details
+        if (updateRequest.getHadCSectionDelivery() != null) {
+            patient.setHadCSectionDelivery(updateRequest.getHadCSectionDelivery());
+        }
+        if (updateRequest.getHadNormalDelivery() != null) {
+            patient.setHadNormalDelivery(updateRequest.getHadNormalDelivery());
+        }
+        if (updateRequest.getHadAbortion() != null) {
+            patient.setHadAbortion(updateRequest.getHadAbortion());
+        }
+        if (updateRequest.getHadOtherPregnancy() != null) {
+            patient.setHadOtherPregnancy(updateRequest.getHadOtherPregnancy());
+        }
+        if (updateRequest.getOtherPregnancyDetails() != null) {
+            patient.setOtherPregnancyDetails(updateRequest.getOtherPregnancyDetails());
+        }
+        if (updateRequest.getTotalKidsBorn() != null) {
+            patient.setTotalKidsBorn(updateRequest.getTotalKidsBorn());
         }
         // Handle LMP date update and recalculate EDD
         if (updateRequest.getLmpDate() != null) {

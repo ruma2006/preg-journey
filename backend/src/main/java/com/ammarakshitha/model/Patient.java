@@ -134,6 +134,25 @@ public class Patient extends BaseEntity {
     @Column(name = "allergies", columnDefinition = "TEXT")
     private String allergies;
 
+    // Previous Pregnancy Details (shown when para >= 1)
+    @Column(name = "had_csection_delivery")
+    private Boolean hadCSectionDelivery;
+
+    @Column(name = "had_normal_delivery")
+    private Boolean hadNormalDelivery;
+
+    @Column(name = "had_abortion")
+    private Boolean hadAbortion;
+
+    @Column(name = "had_other_pregnancy")
+    private Boolean hadOtherPregnancy;
+
+    @Column(name = "other_pregnancy_details", columnDefinition = "TEXT")
+    private String otherPregnancyDetails;
+
+    @Column(name = "total_kids_born")
+    private Integer totalKidsBorn;
+
     @Column(name = "registration_date", nullable = false)
     @Builder.Default
     private LocalDate registrationDate = LocalDate.now();
