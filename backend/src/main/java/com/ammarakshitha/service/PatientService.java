@@ -37,9 +37,14 @@ public class PatientService {
     public Patient registerPatient(PatientRegistrationRequest request, Long registeredByUserId) {
         log.info("Registering new patient: {}", request.getName());
 
+        String aadhaarNumber = request.getAadhaarNumber();
+        if (aadhaarNumber != null && aadhaarNumber.isBlank()) {
+            aadhaarNumber = null;
+        }
+
         // Check for duplicates
-        if (patientRepository.existsByAadhaarNumber(request.getAadhaarNumber())) {
-            throw new DuplicateResourceException("Patient with Aadhaar " + request.getAadhaarNumber() + " already exists");
+        if (aadhaarNumber != null && patientRepository.existsByAadhaarNumber(aadhaarNumber)) {
+            throw new DuplicateResourceException("Patient with Aadhaar " + aadhaarNumber + " already exists");
         }
 
         // Generate unique Mother ID
@@ -63,7 +68,7 @@ public class PatientService {
                 .village(request.getVillage())
                 .pincode(request.getPincode())
                 .motherId(motherId)
-                .aadhaarNumber(request.getAadhaarNumber())
+                .aadhaarNumber(aadhaarNumber)
                 .mobileNumber(request.getMobileNumber())
                 .alternateMobile(request.getAlternateMobile())
                 .dateOfBirth(request.getDateOfBirth())

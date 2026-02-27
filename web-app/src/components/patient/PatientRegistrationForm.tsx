@@ -172,14 +172,12 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
             error={errors.email?.message}
           />
           <Input
-            label="Aadhaar Number"
-            required
+            label="Aadhaar Number (Optional)"
             maxLength={12}
             {...register('aadhaarNumber', {
-              required: 'Aadhaar number is required',
-              pattern: {
-                value: /^[0-9]{12}$/,
-                message: 'Enter a valid 12-digit Aadhaar number',
+              validate: (value) => {
+                if (!value) return true
+                return /^\d{12}$/.test(value) || 'Enter a valid 12-digit Aadhaar number'
               },
             })}
             error={errors.aadhaarNumber?.message}

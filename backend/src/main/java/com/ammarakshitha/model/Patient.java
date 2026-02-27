@@ -69,9 +69,9 @@ public class Patient extends BaseEntity {
     @Column(name = "mother_id", nullable = false, unique = true)
     private String motherId;
 
-    @NotBlank
-    @Size(min = 12, max = 12)
-    @Column(name = "aadhaar_number", nullable = false, unique = true)
+    @Size(max = 12)
+    @Pattern(regexp = "^\\d{12}$")
+    @Column(name = "aadhaar_number", unique = true)
     private String aadhaarNumber;
 
     @NotBlank

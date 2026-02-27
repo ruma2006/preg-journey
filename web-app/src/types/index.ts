@@ -183,7 +183,7 @@ export interface PatientRegistrationRequest {
   mandal?: string;
   village?: string;
   pincode?: string;
-  aadhaarNumber: string;
+  aadhaarNumber?: string;
   mobileNumber: string;
   alternateMobile?: string;
   email?: string;
