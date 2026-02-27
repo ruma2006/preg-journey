@@ -1,5 +1,6 @@
 package com.ammarakshitha.repository;
 
+import com.ammarakshitha.model.HealthCheck;
 import com.ammarakshitha.model.RiskAlert;
 import com.ammarakshitha.model.enums.AlertType;
 import com.ammarakshitha.model.enums.RiskLevel;
@@ -95,4 +96,6 @@ public interface RiskAlertRepository extends JpaRepository<RiskAlert, Long> {
     long countBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+	void deleteByHealthCheck(HealthCheck healthCheck);
 }

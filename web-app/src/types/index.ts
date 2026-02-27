@@ -312,6 +312,7 @@ export interface Consultation {
 }
 
 export interface ConsultationRequest {
+  id?: number; // Include ID for updates, optional for creation
   patientId: number;
   doctorId: number;
   type: ConsultationType;

@@ -18,6 +18,7 @@ import {
   Modal,
   EditButton,
   DeleteButton,
+  ViewButton,
 } from '@/components/ui'
 import { healthCheckService } from '@/services'
 import { HealthCheck } from '@/types'
@@ -30,6 +31,7 @@ export default function HealthChecks() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedHealthCheck, setSelectedHealthCheck] = useState<HealthCheck | null>(null)
+  const [isReadOnly, setIsReadOnly] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   const page = parseInt(searchParams.get('page') || '0')
@@ -185,8 +187,15 @@ export default function HealthChecks() {
                       <RiskBadge level={check.riskLevel} />
                     </TableCell>
                     <TableCell>
+                      <ViewButton tooltip="View Patient Details" 
+                      onClick={() => {
+                        setSelectedHealthCheck(check)
+                        setIsReadOnly(true)
+                        setShowCreateModal(true)
+                      }} />
                       <EditButton tooltip="Edit Health Check" onClick={() => {
                         setSelectedHealthCheck(check)
+                        setIsReadOnly(false)
                         setShowCreateModal(true)
                       }}/>
                       <DeleteButton tooltip="Delete Health Check" onClick={() => {
@@ -241,11 +250,12 @@ export default function HealthChecks() {
         onClose={() => {
           setShowCreateModal(false)
           setSelectedHealthCheck(null)
+          setIsReadOnly(false)
         }}
-        title={selectedHealthCheck ? "Edit Health Check" : "Perform Health Check"}
+        title={isReadOnly ? "View Health Check" : (selectedHealthCheck ? "Edit Health Check" : "Perform Health Check")}
         size="xl"
       >
-        <HealthCheckForm initialData={selectedHealthCheck || undefined} onSuccess={handleSuccess} />
+        <HealthCheckForm initialData={selectedHealthCheck || undefined} onSuccess={handleSuccess} readOnly={isReadOnly} />
       </Modal>
     </div>
   )

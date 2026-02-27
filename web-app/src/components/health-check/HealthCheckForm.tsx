@@ -10,9 +10,10 @@ interface HealthCheckFormProps {
   patientId?: number
   initialData?: HealthCheck
   onSuccess: () => void
+  readOnly?: boolean
 }
 
-export default function HealthCheckForm({ patientId, initialData, onSuccess }: HealthCheckFormProps) {
+export default function HealthCheckForm({ patientId, initialData, onSuccess, readOnly }: HealthCheckFormProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [scheduleFollowUp, setScheduleFollowUp] = useState(false)
@@ -44,7 +45,6 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
     register,
     handleSubmit,
     formState: { errors: _errors },
-    reset,
   } = useForm<HealthCheckRequest>({
     defaultValues: initialData ? {
       id: initialData.id,
@@ -186,32 +186,38 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
           <Input
             label="BP Systolic (mmHg)"
             type="number"
+            disabled={readOnly}
             {...register('bpSystolic', { min: 60, max: 250 })}
           />
           <Input
             label="BP Diastolic (mmHg)"
             type="number"
+            disabled={readOnly}
             {...register('bpDiastolic', { min: 40, max: 150 })}
           />
           <Input
             label="Pulse Rate (bpm)"
             type="number"
+            disabled={readOnly}
             {...register('pulseRate', { min: 40, max: 200 })}
           />
           <Input
             label="Temperature (F)"
             type="number"
             step="0.1"
+            disabled={readOnly}
             {...register('temperature')}
           />
           <Input
             label="SpO2 (%)"
             type="number"
+            disabled={readOnly}
             {...register('spo2', { min: 70, max: 100 })}
           />
           <Input
             label="Respiratory Rate"
             type="number"
+            disabled={readOnly}
             {...register('respiratoryRate')}
           />
         </div>
@@ -225,21 +231,25 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
             label="Hemoglobin (g/dL)"
             type="number"
             step="0.1"
+            disabled={readOnly}
             {...register('hemoglobin')}
           />
           <Input
             label="Blood Sugar Fasting"
             type="number"
+            disabled={readOnly}
             {...register('bloodSugarFasting')}
           />
           <Input
             label="Blood Sugar PP"
             type="number"
+            disabled={readOnly}
             {...register('bloodSugarPP')}
           />
           <Input
             label="Blood Sugar Random"
             type="number"
+            disabled={readOnly}
             {...register('bloodSugarRandom')}
           />
         </div>
@@ -253,23 +263,27 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
             label="Weight (kg)"
             type="number"
             step="0.1"
+            disabled={readOnly}
             {...register('weight')}
           />
           <Input
             label="Fundal Height (cm)"
             type="number"
             step="0.1"
+            disabled={readOnly}
             {...register('fundalHeight')}
           />
           <Input
             label="Fetal Heart Rate"
             type="number"
+            disabled={readOnly}
             {...register('fetalHeartRate')}
           />
           <div className="flex items-center pt-6">
             <input
               type="checkbox"
               id="fetalMovement"
+              disabled={readOnly}
               {...register('fetalMovement')}
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
@@ -295,6 +309,7 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
               <input
                 type="checkbox"
                 id={symptom.id}
+                disabled={readOnly}
                 {...register(symptom.id as keyof HealthCheckRequest)}
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
@@ -308,6 +323,7 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
           <label className="label">Other Symptoms</label>
           <textarea
             {...register('symptoms')}
+            disabled={readOnly}
             rows={2}
             className="input"
             placeholder="Describe any other symptoms..."
@@ -320,6 +336,7 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
         <label className="label">Notes & Recommendations</label>
         <textarea
           {...register('notes')}
+          disabled={readOnly}
           rows={3}
           className="input"
           placeholder="Additional notes and recommendations..."
@@ -337,6 +354,7 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
               <input
                 type="checkbox"
                 id="autoFollowUpEnabled"
+                disabled={readOnly}
                 checked={autoFollowUpEnabled}
                 onChange={(e) => setAutoFollowUpEnabled(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -359,6 +377,7 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
             <input
               type="checkbox"
               id="scheduleFollowUp"
+              disabled={readOnly}
               checked={scheduleFollowUp}
               onChange={(e) => setScheduleFollowUp(e.target.checked)}
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
@@ -426,11 +445,13 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess }: H
       </div>
 
       {/* Submit */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button type="submit" loading={mutation.isPending}>
-          Complete Health Check
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button type="submit" loading={mutation.isPending}>
+            Complete Health Check
+          </Button>
+        </div>
+      )}
     </form>
   )
 }

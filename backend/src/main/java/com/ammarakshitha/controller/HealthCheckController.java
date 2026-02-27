@@ -107,4 +107,14 @@ public class HealthCheckController {
 		long count = healthCheckService.countHealthChecksThisMonth();
 		return ResponseEntity.ok(ApiResponse.success(count));
 	}
+	
+	@DeleteMapping("/{id}")
+	@Operation(summary = "Delete a health check by ID")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<ApiResponse<Void>> deleteHealthCheck(@PathVariable Long id) {
+		healthCheckService.deleteHealthCheck(id);
+		return ResponseEntity.ok(ApiResponse.success(null, "Health check deleted successfully"));
+	}
+	
+	
 }

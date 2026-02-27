@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConsultationRequest {
+	
+	private Long id; // For updates, null for new consultations
 
     @NotNull(message = "Patient ID is required")
     private Long patientId;
