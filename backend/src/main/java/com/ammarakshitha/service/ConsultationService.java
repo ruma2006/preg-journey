@@ -170,6 +170,12 @@ public class ConsultationService {
         log.info("Follow-up created for consultation: {}", consultation.getId());
     }
 
+    public void deleteConsultationById(Long consultationId) {
+		Consultation consultation = getConsultationById(consultationId);
+		consultationRepository.delete(consultation);
+		log.info("Consultation deleted: {}", consultationId);
+	}
+    
     public Consultation cancelConsultation(Long consultationId, String reason, String cancelledBy) {
         Consultation consultation = getConsultationById(consultationId);
 

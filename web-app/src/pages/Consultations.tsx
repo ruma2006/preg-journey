@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, CalendarIcon, VideoCameraIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import {
   Button,
@@ -34,6 +34,9 @@ export default function Consultations() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null)
   const [isReadOnly, setIsReadOnly] = useState(false)
+  const [consultationToDelete, setConsultationToDelete] = useState<Consultation | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const queryClient = useQueryClient()
   const { data: doctors } = useQuery({
     queryKey: ['doctors'],
     queryFn: userService.getDoctors,
@@ -141,6 +144,7 @@ export default function Consultations() {
                 <TableCell header>Type</TableCell>
                 <TableCell header>Scheduled</TableCell>
                 <TableCell header>Status</TableCell>
+                <TableCell header>Meeting Access</TableCell>
                 <TableCell header>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -182,6 +186,8 @@ export default function Consultations() {
                           Join
                         </Button>
                       )}
+                      </TableCell>
+                    <TableCell>
                       <ViewButton tooltip="View Consultation" 
                       onClick={() => {
                         setSelectedConsultation(consultation)
@@ -197,7 +203,8 @@ export default function Consultations() {
                         }}
                       />
                       <DeleteButton tooltip="Delete Consultation" onClick={() => {
-                        // Implement delete functionality here
+                        setConsultationToDelete(consultation)
+                        setShowDeleteConfirm(true)
                       }}/>
                     </TableCell>
                   </TableRow>
@@ -274,6 +281,51 @@ export default function Consultations() {
             setIsReadOnly(false)
           }}
         />
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false)
+          setConsultationToDelete(null)
+        }}
+        title="Delete Consultation"
+        size="sm"
+        animation="flip"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            Are you sure you want to delete the consultation with <strong>{consultationToDelete?.patient.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowDeleteConfirm(false)
+                setConsultationToDelete(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (consultationToDelete) {
+                  consultationService.delete(consultationToDelete.id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['consultations', 'upcoming'] })
+                    setShowDeleteConfirm(false)
+                    setConsultationToDelete(null)
+                  }).catch((error) => {
+                    console.error('Failed to delete consultation:', error)
+                  })
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

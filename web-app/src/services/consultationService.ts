@@ -7,6 +7,10 @@ export const consultationService = {
     return response.data.data
   },
 
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/consultations/${id}`)
+  },
+
   getById: async (id: number): Promise<Consultation> => {
     const response = await api.get<ApiResponse<Consultation>>(`/consultations/${id}`)
     return response.data.data

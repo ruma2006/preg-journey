@@ -35,6 +35,14 @@ public class ConsultationController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(consultation, "Consultation scheduled successfully"));
     }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete consultation by ID")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'MEDICAL_OFFICER', 'MCH_OFFICER', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<String>> deleteConsultationById(@PathVariable Long id) {
+        consultationService.deleteConsultationById(id);
+        return ResponseEntity.ok(ApiResponse.success("Consultation deleted successfully"));
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get consultation by ID")

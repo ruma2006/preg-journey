@@ -287,7 +287,7 @@ public class HealthCheckService {
 		riskAlertRepository.deleteByHealthCheck(healthCheck);
 		
 		//delete associated follow-ups
-		followUpRepository.deleteByTriggeredByHealthCheckId(healthCheck.getId());
+		// followUpRepository.deleteByTriggeredByHealthCheckId(healthCheck.getId());
 		
 		//delete the health check
 		healthCheckRepository.delete(healthCheck);		
