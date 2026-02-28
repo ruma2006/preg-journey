@@ -29,6 +29,11 @@ target/
 # Dependencies (handled by subproject .gitignore)
 node_modules/
 
+# Local-only dev scripts (root)
+package.json
+package-lock.json
+start-dev.sh
+
 # Temporary files
 *.tmp
 *.temp
@@ -38,5 +43,8 @@ node_modules/
 *.local
 
 # Images uploaded by user (keep sample images in repo)
-# uploads/
+uploads/
+backend/uploads/
+backend/.mvn/
+.mvn/
 *.pem

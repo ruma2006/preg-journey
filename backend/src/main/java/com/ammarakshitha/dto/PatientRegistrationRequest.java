@@ -42,9 +42,7 @@ public class PatientRegistrationRequest {
     @Size(max = 10)
     private String pincode;
 
-    @NotBlank(message = "Aadhaar number is required")
-    @Size(min = 12, max = 12, message = "Aadhaar number must be exactly 12 digits")
-    @Pattern(regexp = "^[0-9]{12}$", message = "Aadhaar number must contain only digits")
+    @Pattern(regexp = "^$|^\\d{12}$", message = "Aadhaar number must be exactly 12 digits")
     private String aadhaarNumber;
 
     @NotBlank(message = "Mobile number is required")
@@ -75,4 +73,19 @@ public class PatientRegistrationRequest {
     private String medicalHistory;
 
     private String allergies;
+
+    // Previous Pregnancy Details (shown when para >= 1)
+    private Boolean hadCSectionDelivery;
+
+    private Boolean hadNormalDelivery;
+
+    private Boolean hadAbortion;
+
+    private Boolean hadOtherPregnancy;
+
+    private String otherPregnancyDetails;
+
+    @Min(value = 0, message = "Total kids born must be non-negative")
+    @Max(value = 4, message = "Total kids born cannot exceed 4")
+    private Integer totalKidsBorn;
 }

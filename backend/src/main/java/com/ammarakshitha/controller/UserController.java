@@ -1,6 +1,7 @@
 package com.ammarakshitha.controller;
 
 import com.ammarakshitha.dto.ApiResponse;
+import com.ammarakshitha.dto.ChangePasswordRequest;
 import com.ammarakshitha.dto.UserDTO;
 import com.ammarakshitha.dto.UserRegistrationRequest;
 import com.ammarakshitha.model.User;
@@ -14,9 +15,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -138,6 +142,52 @@ public class UserController {
         String temporaryPassword = userService.resetPassword(id);
         return ResponseEntity.ok(ApiResponse.success(temporaryPassword,
             "Password reset successfully. Please share the temporary password with the user."));
+    }
+
+    // Current user profile endpoints
+    @GetMapping("/me")
+    @Operation(summary = "Get current user profile")
+    public ResponseEntity<ApiResponse<User>> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userService.getUserByEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Update current user profile")
+    public ResponseEntity<ApiResponse<User>> updateCurrentUser(
+            @Valid @RequestBody UserDTO updateRequest,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User currentUser = userService.getUserByEmail(email);
+        User updatedUser = userService.updateUser(currentUser.getId(), updateRequest);
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile updated successfully"));
+    }
+
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload profile photo")
+    public ResponseEntity<ApiResponse<User>> uploadProfilePhoto(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User currentUser = userService.getUserByEmail(email);
+        User updatedUser = userService.uploadProfilePhoto(currentUser.getId(), file);
+        return ResponseEntity.ok(ApiResponse.success(updatedUser, "Profile photo uploaded successfully"));
+    }
+
+    @PostMapping("/me/change-password")
+    @Operation(summary = "Change current user password")
+    public ResponseEntity<ApiResponse<Void>> changeCurrentUserPassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User currentUser = userService.getUserByEmail(email);
+        userService.changePasswordWithValidation(
+            currentUser.getId(),
+            request.getCurrentPassword(),
+            request.getNewPassword()
+        );
+        return ResponseEntity.ok(ApiResponse.success(null, "Password changed successfully"));
     }
 
     @DeleteMapping("/{id}")

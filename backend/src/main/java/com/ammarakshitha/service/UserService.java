@@ -2,6 +2,7 @@ package com.ammarakshitha.service;
 
 import com.ammarakshitha.dto.UserDTO;
 import com.ammarakshitha.dto.UserRegistrationRequest;
+import com.ammarakshitha.exception.BusinessException;
 import com.ammarakshitha.exception.DuplicateResourceException;
 import com.ammarakshitha.exception.ResourceNotFoundException;
 import com.ammarakshitha.model.User;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -26,6 +28,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
 
     public User createUser(UserRegistrationRequest request) {
         log.info("Creating new user: {}", request.getEmail());
@@ -140,6 +143,20 @@ public class UserService {
         log.info("Password changed for user: {}", id);
     }
 
+    public void changePasswordWithValidation(Long id, String currentPassword, String newPassword) {
+        User user = getUserById(id);
+        
+        // Validate current password
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BusinessException("Current password is incorrect");
+        }
+        
+        // Update to new password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("Password changed successfully for user: {}", id);
+    }
+
     @Transactional(readOnly = true)
     public long countByRole(UserRole role) {
         return userRepository.countByRoleAndActive(role);
@@ -174,5 +191,22 @@ public class UserService {
         log.info("Deleting user: {} ({})", user.getName(), user.getEmail());
         userRepository.delete(user);
         log.info("User deleted successfully: {}", id);
+    }
+
+    public User uploadProfilePhoto(Long id, MultipartFile file) {
+        User user = getUserById(id);
+        
+        // Delete old photo if exists
+        if (user.getProfileImageUrl() != null) {
+            storageService.deleteFile(user.getProfileImageUrl());
+        }
+        
+        // Upload new photo
+        String photoUrl = storageService.uploadFile(file, "profile-photos");
+        user.setProfileImageUrl(photoUrl);
+        
+        User updatedUser = userRepository.save(user);
+        log.info("Profile photo uploaded for user: {}", id);
+        return updatedUser;
     }
 }

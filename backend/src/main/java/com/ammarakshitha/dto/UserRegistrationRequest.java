@@ -23,8 +23,8 @@ public class UserRegistrationRequest {
     private String email;
 
     @NotBlank(message = "Phone is required")
-    @Size(min = 10, max = 15, message = "Invalid phone number")
-    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must contain only digits")
+    @Size(min = 10, max = 10, message = "Phone number must be exactly 10 digits")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must contain only digits")
     private String phone;
 
     @NotBlank(message = "Password is required")

@@ -1,6 +1,6 @@
+import { AuthResponse, UserRole } from '@/types'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { AuthResponse, UserRole } from '@/types'
 
 interface AuthState {
   user: {
@@ -8,11 +8,13 @@ interface AuthState {
     name: string
     email: string
     role: UserRole
+    profileImageUrl?: string
   } | null
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
   setAuth: (auth: AuthResponse) => void
+  updateUser: (userData: Partial<AuthState['user']>) => void
   logout: () => void
   hasRole: (roles: UserRole[]) => boolean
 }
@@ -32,11 +34,24 @@ export const useAuthStore = create<AuthState>()(
             name: auth.name,
             email: auth.email,
             role: auth.role,
+            profileImageUrl: auth.profileImageUrl,
           },
           accessToken: auth.accessToken,
           refreshToken: auth.refreshToken,
           isAuthenticated: true,
         })
+      },
+
+      updateUser: (userData: Partial<AuthState['user']>) => {
+        const currentUser = get().user
+        if (currentUser) {
+          set({
+            user: {
+              ...currentUser,
+              ...userData,
+            },
+          })
+        }
       },
 
       logout: () => {

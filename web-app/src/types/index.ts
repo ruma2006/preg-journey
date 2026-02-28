@@ -100,6 +100,7 @@ export interface AuthResponse {
   name: string;
   email: string;
   role: UserRole;
+  profileImageUrl?: string;
 }
 
 // User
@@ -155,6 +156,12 @@ export interface Patient {
   previousComplicationsDetails?: string;
   medicalHistory?: string;
   allergies?: string;
+  hadCSectionDelivery?: boolean;
+  hadNormalDelivery?: boolean;
+  hadAbortion?: boolean;
+  hadOtherPregnancy?: boolean;
+  otherPregnancyDetails?: string;
+  totalKidsBorn?: number;
   registrationDate: string;
   // Delivery Information
   deliveryOutcome?: DeliveryOutcome;
@@ -164,6 +171,8 @@ export interface Patient {
   deliveryNotes?: string;
   babyWeight?: number;
   babyGender?: string;
+  numberOfBabies?: number;
+  babies?: Baby[];
   deliveryHospital?: string;
   deliveryCompletedBy?: User;
   // Mortality Information
@@ -183,7 +192,7 @@ export interface PatientRegistrationRequest {
   mandal?: string;
   village?: string;
   pincode?: string;
-  aadhaarNumber: string;
+  aadhaarNumber?: string;
   mobileNumber: string;
   alternateMobile?: string;
   email?: string;
@@ -196,6 +205,19 @@ export interface PatientRegistrationRequest {
   previousComplicationsDetails?: string;
   medicalHistory?: string;
   allergies?: string;
+  hadCSectionDelivery?: boolean;
+  hadNormalDelivery?: boolean;
+  hadAbortion?: boolean;
+  hadOtherPregnancy?: boolean;
+  otherPregnancyDetails?: string;
+  totalKidsBorn?: number;
+}
+
+export interface Baby {
+  id?: number;
+  gender?: string;
+  weight?: number;
+  birthOrder?: number;
 }
 
 export interface DeliveryCompletionRequest {
@@ -206,6 +228,8 @@ export interface DeliveryCompletionRequest {
   babyWeight?: number;
   babyGender?: string;
   deliveryHospital?: string;
+  numberOfBabies?: number;
+  babies?: Baby[];
   mortalityDate?: string;
   mortalityCause?: string;
   mortalityNotes?: string;

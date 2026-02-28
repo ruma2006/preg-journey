@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { Outlet, Navigate } from 'react-router-dom'
+import { GuidedTour } from '@/components/tour'
+import { PageTransition } from '@/components/ui'
 import { useAuthStore } from '@/store/authStore'
-import Sidebar from './Sidebar'
+import { useState } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
+import Footer from './Footer'
 import Header from './Header'
 import MobileSidebar from './MobileSidebar'
-import Footer from './Footer'
-import { PageTransition } from '@/components/ui'
-import { GuidedTour } from '@/components/tour'
+import Sidebar from './Sidebar'
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -32,8 +32,8 @@ export default function MainLayout() {
         <div className="flex flex-col w-0 flex-1 overflow-hidden">
           <Header onMenuClick={() => setSidebarOpen(true)} />
 
-          <main className="flex-1 relative overflow-y-auto focus:outline-none">
-            <div className="py-6 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-180px)]">
+          <main className="flex-1 flex flex-col overflow-y-auto focus:outline-none">
+            <div className="py-6 px-4 sm:px-6 lg:px-8 flex-1 flex flex-col">
               <PageTransition>
                 <Outlet />
               </PageTransition>
