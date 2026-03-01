@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,6 +50,33 @@ public class ConsultationService {
         if (doctor.getRole() != UserRole.DOCTOR) {
             throw new BusinessException("Assigned user is not a doctor");
         }
+        Consultation consultation = null;
+        if(request.getId() != null) {
+        	log.info("Updating existing consultation with ID: {}", request.getId());
+			// If ID is provided, this is an update operation. Validate existing consultation.
+			Optional<Consultation> existingConsultation = consultationRepository.findById(request.getId());
+			if(existingConsultation.isEmpty()) {
+				throw new ResourceNotFoundException("Consultation not found for update");
+			}
+			consultation = existingConsultation.get();
+			consultation.setPatient(patient);
+			consultation.setDoctor(doctor);
+			consultation.setType(request.getType());
+			consultation.setScheduledAt(request.getScheduledAt());
+			consultation.setChiefComplaint(request.getChiefComplaint());
+			consultation.setNotes(request.getNotes());
+        }
+        else {
+        	consultation = Consultation.builder()
+                    .patient(patient)
+                    .doctor(doctor)
+                    .type(request.getType())
+                    .status(ConsultationStatus.SCHEDULED)
+                    .scheduledAt(request.getScheduledAt())
+                    .chiefComplaint(request.getChiefComplaint())
+                    .notes(request.getNotes())
+                    .build();
+        }
 
         // Check for scheduling conflicts
         List<Consultation> existingConsultations = consultationRepository
@@ -60,16 +88,6 @@ public class ConsultationService {
         if (!existingConsultations.isEmpty()) {
             throw new BusinessException("Doctor has a scheduling conflict at the requested time");
         }
-
-        Consultation consultation = Consultation.builder()
-                .patient(patient)
-                .doctor(doctor)
-                .type(request.getType())
-                .status(ConsultationStatus.SCHEDULED)
-                .scheduledAt(request.getScheduledAt())
-                .chiefComplaint(request.getChiefComplaint())
-                .notes(request.getNotes())
-                .build();
 
         // Generate video room for teleconsultation
         if (request.getType() == ConsultationType.TELECONSULTATION) {
@@ -152,6 +170,12 @@ public class ConsultationService {
         log.info("Follow-up created for consultation: {}", consultation.getId());
     }
 
+    public void deleteConsultationById(Long consultationId) {
+		Consultation consultation = getConsultationById(consultationId);
+		consultationRepository.delete(consultation);
+		log.info("Consultation deleted: {}", consultationId);
+	}
+    
     public Consultation cancelConsultation(Long consultationId, String reason, String cancelledBy) {
         Consultation consultation = getConsultationById(consultationId);
 

@@ -57,7 +57,7 @@ export function TableCell({ children, className, header }: TableCellProps) {
   }
 
   return (
-    <td className={clsx('px-6 py-4 whitespace-nowrap text-sm text-gray-900', className)}>
+    <td className={clsx('px-6 py-4 whitespace-nowrap text-left text-sm text-gray-900', className)}>
       {children}
     </td>
   )

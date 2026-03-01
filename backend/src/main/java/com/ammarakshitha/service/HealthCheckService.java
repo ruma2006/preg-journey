@@ -276,4 +276,20 @@ public class HealthCheckService {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
         return healthCheckRepository.countBetweenDates(startOfMonth, LocalDate.now());
     }
+
+    @Transactional(readOnly = true)
+	public void deleteHealthCheck(Long id) {
+		// find the health check to ensure it exists
+		HealthCheck healthCheck = healthCheckRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Health check not found with id: " + id));
+		
+		//delete associated risk alerts
+		riskAlertRepository.deleteByHealthCheck(healthCheck);
+		
+		//delete associated follow-ups
+		// followUpRepository.deleteByTriggeredByHealthCheckId(healthCheck.getId());
+		
+		//delete the health check
+		healthCheckRepository.delete(healthCheck);		
+	}
 }
