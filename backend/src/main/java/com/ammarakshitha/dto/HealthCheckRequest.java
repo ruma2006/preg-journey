@@ -60,6 +60,9 @@ public class HealthCheckRequest {
     private String recommendations;
     private LocalDate nextCheckDate;
 
+    // Referral Information (for doctor to refer patient to hospital)
+    private String referredToHospital;
+
     // Follow-up scheduling
     private Boolean scheduleFollowUp;
     private LocalDate followUpDate;

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui'
 import { alertService, consultationService, followUpService, healthCheckService, patientService, userService } from '@/services'
 import { useAuthStore } from '@/store/authStore'
-import { ConsultationRequest, ConsultationType, DeliveryCompletionRequest, DeliveryOutcome, DeliveryType, Patient, User, UserRole } from '@/types'
+import { ConsultationRequest, ConsultationType, DeliveryCompletionRequest, DeliveryOutcome, DeliveryType, Patient, User, UserRole, PreviousPregnancy, PregnancyOutcome } from '@/types'
 import {
     ArrowLeftIcon,
     CalendarIcon,
@@ -51,6 +51,29 @@ const DELIVERY_TYPES = [
   { value: DeliveryType.INDUCED, label: 'Induced Labor' },
 ]
 
+// Dropdown options for gravida/para
+const PREGNANCY_COUNT_OPTIONS = Array.from({ length: 11 }, (_, i) => i)
+
+const PREGNANCY_OUTCOME_OPTIONS = [
+  { value: 'LIVE_BIRTH', label: 'Live Birth' },
+  { value: 'ABORTION', label: 'Abortion' },
+  { value: 'STILLBIRTH', label: 'Stillbirth' },
+  { value: 'MISCARRIAGE', label: 'Miscarriage' },
+  { value: 'ECTOPIC', label: 'Ectopic Pregnancy' },
+]
+
+const PREVIOUS_DELIVERY_TYPE_OPTIONS = [
+  { value: 'NORMAL', label: 'Normal Delivery' },
+  { value: 'CESAREAN', label: 'C-Section' },
+  { value: 'ASSISTED', label: 'Assisted Delivery' },
+  { value: 'INDUCED', label: 'Induced Delivery' },
+]
+
+const BABY_GENDER_OPTIONS = [
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+]
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>()
@@ -62,6 +85,7 @@ export default function PatientDetail() {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false)
   const [showConsultationModal, setShowConsultationModal] = useState(false)
   const [editData, setEditData] = useState<Partial<Patient>>({})
+  const [editPreviousPregnancies, setEditPreviousPregnancies] = useState<PreviousPregnancy[]>([])
   const [deliveryData, setDeliveryData] = useState<Partial<DeliveryCompletionRequest>>({
     deliveryOutcome: DeliveryOutcome.SUCCESSFUL,
     deliveryType: DeliveryType.NORMAL,
@@ -169,7 +193,11 @@ export default function PatientDetail() {
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault()
-    updateMutation.mutate(editData)
+    const submissionData = {
+      ...editData,
+      previousPregnancies: editPreviousPregnancies.length > 0 ? editPreviousPregnancies : undefined,
+    }
+    updateMutation.mutate(submissionData)
   }
 
   const openEditModal = () => {
@@ -204,8 +232,61 @@ export default function PatientDetail() {
         otherPregnancyDetails: patient.otherPregnancyDetails,
         totalKidsBorn: patient.totalKidsBorn,
       })
+
+      // Initialize previous pregnancies from JSON or create empty array
+      let prevPregnancies: PreviousPregnancy[] = []
+      if (patient.previousPregnanciesJson) {
+        try {
+          prevPregnancies = JSON.parse(patient.previousPregnanciesJson)
+        } catch {
+          prevPregnancies = []
+        }
+      }
+      // If no JSON data but para exists, create placeholder entries based on number of deliveries
+      const paraNum = patient.para || 0
+      const deliveryCount = Math.max(0, paraNum)
+      if (prevPregnancies.length < deliveryCount) {
+        for (let i = prevPregnancies.length; i < deliveryCount; i++) {
+          prevPregnancies.push({
+            pregnancyNumber: i + 1,
+            outcome: PregnancyOutcome.LIVE_BIRTH,
+            deliveryType: DeliveryType.NORMAL,
+            babyGender: undefined,
+          })
+        }
+      }
+      setEditPreviousPregnancies(prevPregnancies.slice(0, deliveryCount))
       setShowEditModal(true)
     }
+  }
+
+  const updateEditPara = (newPara: number) => {
+    setEditData({ ...editData, para: newPara })
+    const deliveryCount = Math.max(0, newPara)
+    setEditPreviousPregnancies(prev => {
+      if (prev.length === deliveryCount) return prev
+      if (prev.length < deliveryCount) {
+        const newEntries: PreviousPregnancy[] = []
+        for (let i = prev.length; i < deliveryCount; i++) {
+          newEntries.push({
+            pregnancyNumber: i + 1,
+            outcome: PregnancyOutcome.LIVE_BIRTH,
+            deliveryType: DeliveryType.NORMAL,
+            babyGender: undefined,
+          })
+        }
+        return [...prev, ...newEntries]
+      }
+      return prev.slice(0, deliveryCount)
+    })
+  }
+
+  const updateEditPreviousPregnancy = (index: number, field: keyof PreviousPregnancy, value: string) => {
+    setEditPreviousPregnancies(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
   }
 
   const handleDelivery = (e: React.FormEvent) => {
@@ -931,128 +1012,100 @@ export default function PatientDetail() {
                 </select>
               </div>
               <div>
-                <label className="label">Gravida (No. of Pregnancies)</label>
-                <input
-                  type="number"
+                <label className="label">Gravida (No. of Pregnancies incl. current)</label>
+                <select
                   className="input"
-                  min="1"
-                  max="20"
                   value={editData.gravida || ''}
                   onChange={(e) => setEditData({ ...editData, gravida: parseInt(e.target.value) || undefined })}
-                />
+                >
+                  <option value="">Select</option>
+                  {PREGNANCY_COUNT_OPTIONS.map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="label">Para (No. of Deliveries)</label>
-                <input
-                  type="number"
+                <select
                   className="input"
-                  min="0"
-                  max="20"
                   value={editData.para || ''}
-                  onChange={(e) => setEditData({ ...editData, para: parseInt(e.target.value) || undefined })}
-                />
+                  onChange={(e) => updateEditPara(parseInt(e.target.value) || 0)}
+                >
+                  <option value="">Select</option>
+                  {PREGNANCY_COUNT_OPTIONS.map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
             </div>
+
+            {/* Dynamic Previous Delivery Details */}
+            {editPreviousPregnancies.length > 0 && (
+              <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h5 className="text-sm font-medium text-purple-900 mb-4">
+                  Previous Delivery Details ({editPreviousPregnancies.length} {editPreviousPregnancies.length === 1 ? 'delivery' : 'deliveries'})
+                </h5>
+                <div className="space-y-4">
+                  {editPreviousPregnancies.map((pregnancy, index) => (
+                    <div key={index} className="p-3 bg-white rounded-lg border border-purple-100">
+                      <p className="text-sm font-medium text-purple-800 mb-3">
+                        Delivery #{pregnancy.pregnancyNumber}
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="label text-xs">Outcome</label>
+                          <select
+                            value={pregnancy.outcome}
+                            onChange={(e) => updateEditPreviousPregnancy(index, 'outcome', e.target.value)}
+                            className="input text-sm"
+                          >
+                            {PREGNANCY_OUTCOME_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {pregnancy.outcome === 'LIVE_BIRTH' && (
+                          <>
+                            <div>
+                              <label className="label text-xs">Delivery Type</label>
+                              <select
+                                value={pregnancy.deliveryType || ''}
+                                onChange={(e) => updateEditPreviousPregnancy(index, 'deliveryType', e.target.value)}
+                                className="input text-sm"
+                              >
+                                <option value="">Select</option>
+                                {PREVIOUS_DELIVERY_TYPE_OPTIONS.map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label text-xs">Baby Gender</label>
+                              <select
+                                value={pregnancy.babyGender || ''}
+                                onChange={(e) => updateEditPreviousPregnancy(index, 'babyGender', e.target.value)}
+                                className="input text-sm"
+                              >
+                                <option value="">Select</option>
+                                {BABY_GENDER_OPTIONS.map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Previous Complications */}
           <div className="border-t pt-4 mt-4">
             <h4 className="text-sm font-medium text-gray-700 mb-3">Previous Complications & Medical History</h4>
-            
-            {/* Previous Pregnancy Details - Show only when para >= 1 */}
-            {editData.para && editData.para >= 1 && (
-              <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h5 className="text-sm font-medium text-purple-900 mb-3">Previous Pregnancy Details</h5>
-                <p className="text-xs text-purple-700 mb-3">
-                  Select all types of previous pregnancies (you can select multiple)
-                </p>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="editHadNormalDelivery"
-                        className="w-4 h-4 text-purple-600 rounded"
-                        checked={editData.hadNormalDelivery || false}
-                        onChange={(e) => setEditData({ ...editData, hadNormalDelivery: e.target.checked })}
-                      />
-                      <label htmlFor="editHadNormalDelivery" className="text-sm text-gray-700">
-                        Normal Delivery
-                      </label>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="editHadCSectionDelivery"
-                        className="w-4 h-4 text-purple-600 rounded"
-                        checked={editData.hadCSectionDelivery || false}
-                        onChange={(e) => setEditData({ ...editData, hadCSectionDelivery: e.target.checked })}
-                      />
-                      <label htmlFor="editHadCSectionDelivery" className="text-sm text-gray-700">
-                        C-Section
-                      </label>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="editHadAbortion"
-                        className="w-4 h-4 text-purple-600 rounded"
-                        checked={editData.hadAbortion || false}
-                        onChange={(e) => setEditData({ ...editData, hadAbortion: e.target.checked })}
-                      />
-                      <label htmlFor="editHadAbortion" className="text-sm text-gray-700">
-                        Abortion
-                      </label>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="editHadOtherPregnancy"
-                        className="w-4 h-4 text-purple-600 rounded"
-                        checked={editData.hadOtherPregnancy || false}
-                        onChange={(e) => setEditData({ ...editData, hadOtherPregnancy: e.target.checked })}
-                      />
-                      <label htmlFor="editHadOtherPregnancy" className="text-sm text-gray-700">
-                        Other
-                      </label>
-                    </div>
-                  </div>
-
-                  {editData.hadOtherPregnancy && (
-                    <div>
-                      <label className="label">Specify Other Pregnancy Type</label>
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Please specify..."
-                        value={editData.otherPregnancyDetails || ''}
-                        onChange={(e) => setEditData({ ...editData, otherPregnancyDetails: e.target.value })}
-                        maxLength={200}
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="label">Total Number of Kids Born</label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      max="4"
-                      placeholder="Including twins/multiples"
-                      value={editData.totalKidsBorn || ''}
-                      onChange={(e) => setEditData({ ...editData, totalKidsBorn: parseInt(e.target.value) || undefined })}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Total children born from all previous pregnancies (max 4)
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-4">
               <div className="flex items-center gap-2">

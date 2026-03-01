@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -88,4 +89,7 @@ public class PatientRegistrationRequest {
     @Min(value = 0, message = "Total kids born must be non-negative")
     @Max(value = 4, message = "Total kids born cannot exceed 4")
     private Integer totalKidsBorn;
+
+    // Detailed previous pregnancy information
+    private List<PreviousPregnancyDTO> previousPregnancies;
 }

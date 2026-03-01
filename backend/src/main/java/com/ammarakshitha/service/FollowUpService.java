@@ -219,4 +219,28 @@ public class FollowUpService {
     public List<FollowUp> getAllFollowUps() {
         return followUpRepository.findAll();
     }
+
+    @Transactional(readOnly = true)
+    public List<FollowUp> getPastFollowUps() {
+        return followUpRepository.findPastFollowUps();
+    }
+
+    /**
+     * Update the photo URL for a follow-up (after photo upload).
+     */
+    public FollowUp updatePhotoUrl(Long followUpId, String photoUrl) {
+        FollowUp followUp = getFollowUpById(followUpId);
+        followUp.setPhotoUrl(photoUrl);
+        log.info("Photo uploaded for follow-up: {}", followUpId);
+        return followUpRepository.save(followUp);
+    }
+
+    /**
+     * Delete a follow-up by ID.
+     */
+    public void deleteFollowUp(Long followUpId) {
+        FollowUp followUp = getFollowUpById(followUpId);
+        followUpRepository.delete(followUp);
+        log.info("Follow-up deleted: {}", followUpId);
+    }
 }

@@ -79,6 +79,10 @@ public class FollowUp extends BaseEntity {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    // Photo documentation (uploaded by doctor/nurse after follow-up)
+    @Column(name = "photo_url")
+    private String photoUrl;
+
     // Next follow-up scheduling
     @Column(name = "next_follow_up_date")
     private LocalDate nextFollowUpDate;

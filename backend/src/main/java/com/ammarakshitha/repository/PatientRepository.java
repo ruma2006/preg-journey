@@ -27,6 +27,21 @@ public interface PatientRepository extends JpaRepository<Patient, Long>, JpaSpec
 
     boolean existsByAadhaarNumber(String aadhaarNumber);
 
+    // Check if an ACTIVE patient exists with the given Aadhaar number
+    // This allows re-registration when previous patient is DISCHARGED or INACTIVE
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Patient p WHERE p.aadhaarNumber = :aadhaarNumber AND p.status = 'ACTIVE'")
+    boolean existsActivePatientByAadhaarNumber(@Param("aadhaarNumber") String aadhaarNumber);
+
+    // Find active patient by Aadhaar
+    @Query("SELECT p FROM Patient p WHERE p.aadhaarNumber = :aadhaarNumber AND p.status = 'ACTIVE'")
+    Optional<Patient> findActiveByAadhaarNumber(@Param("aadhaarNumber") String aadhaarNumber);
+
+    // Check for active registration with same mobile number and similar LMP date range (for duplicate check)
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Patient p WHERE p.mobileNumber = :mobileNumber AND p.status = 'ACTIVE' AND p.lmpDate = :lmpDate")
+    boolean existsActivePatientByMobileAndLmpDate(
+            @Param("mobileNumber") String mobileNumber,
+            @Param("lmpDate") LocalDate lmpDate);
+
     List<Patient> findByMobileNumber(String mobileNumber);
 
     // Risk level queries

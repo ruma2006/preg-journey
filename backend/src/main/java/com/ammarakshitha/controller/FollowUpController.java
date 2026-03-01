@@ -5,18 +5,22 @@ import com.ammarakshitha.dto.FollowUpRequest;
 import com.ammarakshitha.dto.FollowUpUpdateRequest;
 import com.ammarakshitha.model.FollowUp;
 import com.ammarakshitha.service.FollowUpService;
+import com.ammarakshitha.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,10 +28,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/follow-ups")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Follow Up", description = "APIs for follow-up management")
 public class FollowUpController {
 
     private final FollowUpService followUpService;
+    private final StorageService storageService;
 
     @PostMapping
     @Operation(summary = "Create a new follow-up")
@@ -162,5 +168,32 @@ public class FollowUpController {
     public ResponseEntity<ApiResponse<List<FollowUp>>> getAllFollowUps() {
         List<FollowUp> followUps = followUpService.getAllFollowUps();
         return ResponseEntity.ok(ApiResponse.success(followUps));
+    }
+
+    @GetMapping("/past")
+    @Operation(summary = "Get all past/completed follow-ups")
+    public ResponseEntity<ApiResponse<List<FollowUp>>> getPastFollowUps() {
+        List<FollowUp> followUps = followUpService.getPastFollowUps();
+        return ResponseEntity.ok(ApiResponse.success(followUps));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a follow-up")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK')")
+    public ResponseEntity<ApiResponse<Void>> deleteFollowUp(@PathVariable Long id) {
+        followUpService.deleteFollowUp(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Follow-up deleted successfully"));
+    }
+
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload photo for a follow-up")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<FollowUp>> uploadPhoto(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        log.info("Uploading photo for follow-up: {}", id);
+        String photoUrl = storageService.uploadFile(file, "follow-ups");
+        FollowUp followUp = followUpService.updatePhotoUrl(id, photoUrl);
+        return ResponseEntity.ok(ApiResponse.success(followUp, "Photo uploaded successfully"));
     }
 }

@@ -33,9 +33,12 @@ public class LocalStorageService implements StorageService {
 
         try {
             // Create upload directory if it doesn't exist
-            Path uploadPath = Paths.get(uploadDir, folder);
+            Path uploadPath = Paths.get(uploadDir, folder).toAbsolutePath().normalize();
+            log.info("Upload path (absolute): {}", uploadPath);
+
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
+                log.info("Created directory: {}", uploadPath);
             }
 
             String fileName = generateFileName(file.getOriginalFilename());
@@ -44,8 +47,11 @@ public class LocalStorageService implements StorageService {
             // Copy file to the target location
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            String url = String.format("/uploads/%s/%s", folder, fileName);
-            log.info("File uploaded successfully to local storage: {}", url);
+            log.info("File saved to: {} (exists: {})", filePath, Files.exists(filePath));
+
+            // Include /api context path in the URL
+            String url = String.format("/api/uploads/%s/%s", folder, fileName);
+            log.info("File uploaded successfully. URL: {}, Size: {} bytes", url, file.getSize());
             return url;
 
         } catch (IOException e) {

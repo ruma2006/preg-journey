@@ -4,6 +4,7 @@ import com.ammarakshitha.dto.ApiResponse;
 import com.ammarakshitha.dto.HealthCheckRequest;
 import com.ammarakshitha.model.HealthCheck;
 import com.ammarakshitha.service.HealthCheckService;
+import com.ammarakshitha.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,9 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +32,7 @@ import java.util.Optional;
 public class HealthCheckController {
 
 	private final HealthCheckService healthCheckService;
+	private final StorageService storageService;
 
 	@PostMapping
 	@Operation(summary = "Perform a new health check")
@@ -107,14 +111,25 @@ public class HealthCheckController {
 		long count = healthCheckService.countHealthChecksThisMonth();
 		return ResponseEntity.ok(ApiResponse.success(count));
 	}
-	
+
 	@DeleteMapping("/{id}")
-	@Operation(summary = "Delete a health check by ID")
-	@PreAuthorize("hasRole('ADMIN')")
+	@Operation(summary = "Soft delete a health check (mark as inactive)")
+	@PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'DOCTOR')")
 	public ResponseEntity<ApiResponse<Void>> deleteHealthCheck(@PathVariable Long id) {
-		healthCheckService.deleteHealthCheck(id);
+		log.info("Soft deleting health check: {}", id);
+		healthCheckService.softDeleteHealthCheck(id);
 		return ResponseEntity.ok(ApiResponse.success(null, "Health check deleted successfully"));
 	}
-	
-	
+
+	@PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(summary = "Upload photo for a health check")
+	@PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'DOCTOR')")
+	public ResponseEntity<ApiResponse<HealthCheck>> uploadPhoto(
+			@PathVariable Long id,
+			@RequestParam("file") MultipartFile file) {
+		log.info("Uploading photo for health check: {}", id);
+		String photoUrl = storageService.uploadFile(file, "health-checks");
+		HealthCheck healthCheck = healthCheckService.updatePhotoUrl(id, photoUrl);
+		return ResponseEntity.ok(ApiResponse.success(healthCheck, "Photo uploaded successfully"));
+	}
 }

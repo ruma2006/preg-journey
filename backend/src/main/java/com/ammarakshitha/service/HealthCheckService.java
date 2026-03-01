@@ -90,7 +90,8 @@ public class HealthCheckService {
 			existingHealthCheck.setNotes(request.getNotes());
 			existingHealthCheck.setRecommendations(request.getRecommendations());
 			existingHealthCheck.setNextCheckDate(request.getNextCheckDate());
-			
+			existingHealthCheck.setReferredToHospital(request.getReferredToHospital());
+
 			healthCheck = healthCheckRepository.save(existingHealthCheck);
 	
         }
@@ -124,6 +125,7 @@ public class HealthCheckService {
                     .notes(request.getNotes())
                     .recommendations(request.getRecommendations())
                     .nextCheckDate(request.getNextCheckDate())
+                    .referredToHospital(request.getReferredToHospital())
                     .performedBy(performedBy)
                     .build();
         }
@@ -232,23 +234,52 @@ public class HealthCheckService {
 
     @Transactional(readOnly = true)
     public HealthCheck getHealthCheckById(Long id) {
-        return healthCheckRepository.findById(id)
+        HealthCheck healthCheck = healthCheckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Health check not found"));
+        // Treat null as active (for backward compatibility), only reject if explicitly false
+        if (Boolean.FALSE.equals(healthCheck.getIsActive())) {
+            throw new ResourceNotFoundException("Health check not found");
+        }
+        return healthCheck;
     }
 
     @Transactional(readOnly = true)
     public List<HealthCheck> getHealthChecksByPatientId(Long patientId) {
-        return healthCheckRepository.findByPatientIdOrderByCheckDateDesc(patientId);
+        return healthCheckRepository.findByPatientIdAndIsActiveTrueOrderByCheckDateDesc(patientId);
     }
 
     @Transactional(readOnly = true)
     public Page<HealthCheck> getHealthChecksByPatientId(Long patientId, Pageable pageable) {
-        return healthCheckRepository.findByPatientId(patientId, pageable);
+        return healthCheckRepository.findByPatientIdAndIsActiveTrue(patientId, pageable);
     }
 
     @Transactional(readOnly = true)
     public Optional<HealthCheck> getLatestHealthCheck(Long patientId) {
-        return healthCheckRepository.findTopByPatientIdOrderByCheckDateDesc(patientId);
+        Page<HealthCheck> page = healthCheckRepository.findActiveByPatientIdOrderByCheckDateDescPaged(
+                patientId, org.springframework.data.domain.PageRequest.of(0, 1));
+        return page.getContent().isEmpty() ? Optional.empty() : Optional.of(page.getContent().get(0));
+    }
+
+    /**
+     * Soft delete a health check by marking it as inactive.
+     */
+    @Transactional
+    public void softDeleteHealthCheck(Long id) {
+        HealthCheck healthCheck = healthCheckRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Health check not found"));
+        healthCheck.setIsActive(false);
+        healthCheckRepository.save(healthCheck);
+        log.info("Health check {} soft deleted", id);
+    }
+
+    /**
+     * Update the photo URL for a health check.
+     */
+    @Transactional
+    public HealthCheck updatePhotoUrl(Long id, String photoUrl) {
+        HealthCheck healthCheck = getHealthCheckById(id);
+        healthCheck.setPhotoUrl(photoUrl);
+        return healthCheckRepository.save(healthCheck);
     }
 
     @Transactional(readOnly = true)
@@ -276,20 +307,4 @@ public class HealthCheckService {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
         return healthCheckRepository.countBetweenDates(startOfMonth, LocalDate.now());
     }
-
-    @Transactional(readOnly = true)
-	public void deleteHealthCheck(Long id) {
-		// find the health check to ensure it exists
-		HealthCheck healthCheck = healthCheckRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Health check not found with id: " + id));
-		
-		//delete associated risk alerts
-		riskAlertRepository.deleteByHealthCheck(healthCheck);
-		
-		//delete associated follow-ups
-		// followUpRepository.deleteByTriggeredByHealthCheckId(healthCheck.getId());
-		
-		//delete the health check
-		healthCheckRepository.delete(healthCheck);		
-	}
 }

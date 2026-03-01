@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { CameraIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Button, Input } from '@/components/ui'
 import { healthCheckService, patientService, userService } from '@/services'
 import { HealthCheckRequest, HealthCheck, Patient, User } from '@/types'
@@ -10,10 +11,9 @@ interface HealthCheckFormProps {
   patientId?: number
   initialData?: HealthCheck
   onSuccess: () => void
-  readOnly?: boolean
 }
 
-export default function HealthCheckForm({ patientId, initialData, onSuccess, readOnly }: HealthCheckFormProps) {
+export default function HealthCheckForm({ patientId, initialData, onSuccess }: HealthCheckFormProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [scheduleFollowUp, setScheduleFollowUp] = useState(false)
@@ -21,6 +21,9 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
   const [followUpDate, setFollowUpDate] = useState('')
   const [followUpAssigneeId, setFollowUpAssigneeId] = useState<number | undefined>()
   const [followUpNotes, setFollowUpNotes] = useState('')
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: searchResults } = useQuery({
     queryKey: ['patientSearch', searchQuery],
@@ -38,13 +41,44 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
   useEffect(() => {
     if (initialData) {
       setSelectedPatient(initialData.patient)
+      if (initialData.photoUrl) {
+        setPhotoPreview(initialData.photoUrl)
+      }
     }
   }, [initialData])
+
+  // Handle photo file selection
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+        toast.error('Only JPG, JPEG, and PNG images are allowed')
+        return
+      }
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
+      setPhotoFile(file)
+      setPhotoPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const {
     register,
     handleSubmit,
     formState: { errors: _errors },
+    reset,
   } = useForm<HealthCheckRequest>({
     defaultValues: initialData ? {
       id: initialData.id,
@@ -76,12 +110,35 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
       recommendations: initialData.recommendations,
       nextCheckDate: initialData.nextCheckDate,
       checkDate: initialData.checkDate,
+      referredToHospital: initialData.referredToHospital,
     } : undefined,
+  })
+
+  // Photo upload mutation
+  const photoUploadMutation = useMutation({
+    mutationFn: ({ healthCheckId, file }: { healthCheckId: number; file: File }) =>
+      healthCheckService.uploadPhoto(healthCheckId, file),
+    onSuccess: () => {
+      toast.success('Photo uploaded successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to upload photo')
+    },
   })
 
   const mutation = useMutation({
     mutationFn: healthCheckService.perform,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Upload photo if one was selected
+      if (photoFile) {
+        try {
+          await photoUploadMutation.mutateAsync({ healthCheckId: data.id, file: photoFile })
+        } catch (error) {
+          console.error('Photo upload failed:', error)
+          // Continue even if photo upload fails
+        }
+      }
+
       const riskMsg = data.riskLevel === 'RED' ? 'SEVERE RISK DETECTED!' :
                       data.riskLevel === 'YELLOW' ? 'Moderate risk detected' :
                       'Patient is stable'
@@ -186,38 +243,32 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
           <Input
             label="BP Systolic (mmHg)"
             type="number"
-            disabled={readOnly}
             {...register('bpSystolic', { min: 60, max: 250 })}
           />
           <Input
             label="BP Diastolic (mmHg)"
             type="number"
-            disabled={readOnly}
             {...register('bpDiastolic', { min: 40, max: 150 })}
           />
           <Input
             label="Pulse Rate (bpm)"
             type="number"
-            disabled={readOnly}
             {...register('pulseRate', { min: 40, max: 200 })}
           />
           <Input
             label="Temperature (F)"
             type="number"
             step="0.1"
-            disabled={readOnly}
             {...register('temperature')}
           />
           <Input
             label="SpO2 (%)"
             type="number"
-            disabled={readOnly}
             {...register('spo2', { min: 70, max: 100 })}
           />
           <Input
             label="Respiratory Rate"
             type="number"
-            disabled={readOnly}
             {...register('respiratoryRate')}
           />
         </div>
@@ -231,25 +282,21 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
             label="Hemoglobin (g/dL)"
             type="number"
             step="0.1"
-            disabled={readOnly}
             {...register('hemoglobin')}
           />
           <Input
             label="Blood Sugar Fasting"
             type="number"
-            disabled={readOnly}
             {...register('bloodSugarFasting')}
           />
           <Input
             label="Blood Sugar PP"
             type="number"
-            disabled={readOnly}
             {...register('bloodSugarPP')}
           />
           <Input
             label="Blood Sugar Random"
             type="number"
-            disabled={readOnly}
             {...register('bloodSugarRandom')}
           />
         </div>
@@ -263,27 +310,23 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
             label="Weight (kg)"
             type="number"
             step="0.1"
-            disabled={readOnly}
             {...register('weight')}
           />
           <Input
             label="Fundal Height (cm)"
             type="number"
             step="0.1"
-            disabled={readOnly}
             {...register('fundalHeight')}
           />
           <Input
             label="Fetal Heart Rate"
             type="number"
-            disabled={readOnly}
             {...register('fetalHeartRate')}
           />
           <div className="flex items-center pt-6">
             <input
               type="checkbox"
               id="fetalMovement"
-              disabled={readOnly}
               {...register('fetalMovement')}
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
@@ -309,7 +352,6 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
               <input
                 type="checkbox"
                 id={symptom.id}
-                disabled={readOnly}
                 {...register(symptom.id as keyof HealthCheckRequest)}
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
@@ -323,7 +365,6 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
           <label className="label">Other Symptoms</label>
           <textarea
             {...register('symptoms')}
-            disabled={readOnly}
             rows={2}
             className="input"
             placeholder="Describe any other symptoms..."
@@ -336,11 +377,78 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
         <label className="label">Notes & Recommendations</label>
         <textarea
           {...register('notes')}
-          disabled={readOnly}
           rows={3}
           className="input"
           placeholder="Additional notes and recommendations..."
         />
+      </div>
+
+      {/* Referral Information */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Hospital Referral</h3>
+        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <label className="label text-amber-800">Referred to Hospital</label>
+          <input
+            type="text"
+            {...register('referredToHospital')}
+            className="input"
+            placeholder="Enter hospital name if patient needs referral (e.g., District Hospital, NIMS Hyderabad)..."
+          />
+          <p className="text-xs text-amber-600 mt-1">
+            Fill this if the patient needs to be referred to a higher center or specialist hospital.
+          </p>
+        </div>
+      </div>
+
+      {/* Photo Documentation */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Photo Documentation</h3>
+        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handlePhotoChange}
+            accept="image/jpeg,image/jpg,image/png"
+            className="hidden"
+          />
+
+          {photoPreview ? (
+            <div className="relative inline-block">
+              <img
+                src={photoPreview}
+                alt="Health check photo"
+                className="w-full max-w-md h-48 object-cover rounded-lg border"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.onerror = null
+                  target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMjAwIDE1MCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmM2Y0ZjYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzljYTNhZiIgZm9udC1zaXplPSIxNCI+SW1hZ2UgdW5hdmFpbGFibGU8L3RleHQ+PC9zdmc+'
+                }}
+              />
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+              <p className="text-xs text-gray-500 mt-2">
+                {photoFile ? 'New photo selected' : 'Existing photo'}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center w-full max-w-md h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors"
+            >
+              <div className="text-center">
+                <CameraIcon className="h-8 w-8 mx-auto text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">Click to upload photo with patient</p>
+                <p className="text-xs text-gray-400">JPG, JPEG, or PNG (max 5MB)</p>
+              </div>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Follow-up Scheduling */}
@@ -354,7 +462,6 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
               <input
                 type="checkbox"
                 id="autoFollowUpEnabled"
-                disabled={readOnly}
                 checked={autoFollowUpEnabled}
                 onChange={(e) => setAutoFollowUpEnabled(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -377,7 +484,6 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
             <input
               type="checkbox"
               id="scheduleFollowUp"
-              disabled={readOnly}
               checked={scheduleFollowUp}
               onChange={(e) => setScheduleFollowUp(e.target.checked)}
               className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
@@ -445,13 +551,11 @@ export default function HealthCheckForm({ patientId, initialData, onSuccess, rea
       </div>
 
       {/* Submit */}
-      {!readOnly && (
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="submit" loading={mutation.isPending}>
-            Complete Health Check
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button type="submit" loading={mutation.isPending}>
+          Complete Health Check
+        </Button>
+      </div>
     </form>
   )
 }

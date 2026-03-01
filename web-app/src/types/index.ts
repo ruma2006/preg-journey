@@ -27,6 +27,13 @@ export enum ConsultationType {
   EMERGENCY = 'EMERGENCY',
 }
 
+export enum TeleconsultationPlatform {
+  ZOOM = 'ZOOM',
+  GOOGLE_MEET = 'GOOGLE_MEET',
+  WHATSAPP = 'WHATSAPP',
+  OTHER = 'OTHER',
+}
+
 export enum ConsultationStatus {
   SCHEDULED = 'SCHEDULED',
   IN_PROGRESS = 'IN_PROGRESS',
@@ -56,6 +63,21 @@ export enum DeliveryType {
   CESAREAN = 'CESAREAN',
   ASSISTED = 'ASSISTED',
   INDUCED = 'INDUCED',
+}
+
+export enum PregnancyOutcome {
+  LIVE_BIRTH = 'LIVE_BIRTH',
+  ABORTION = 'ABORTION',
+  STILLBIRTH = 'STILLBIRTH',
+  MISCARRIAGE = 'MISCARRIAGE',
+  ECTOPIC = 'ECTOPIC',
+}
+
+export interface PreviousPregnancy {
+  pregnancyNumber: number;
+  outcome: PregnancyOutcome;
+  deliveryType?: DeliveryType;
+  babyGender?: 'MALE' | 'FEMALE';
 }
 
 export enum AlertType {
@@ -162,6 +184,8 @@ export interface Patient {
   hadOtherPregnancy?: boolean;
   otherPregnancyDetails?: string;
   totalKidsBorn?: number;
+  previousPregnanciesJson?: string;
+  previousPregnancies?: PreviousPregnancy[];
   registrationDate: string;
   // Delivery Information
   deliveryOutcome?: DeliveryOutcome;
@@ -211,6 +235,7 @@ export interface PatientRegistrationRequest {
   hadOtherPregnancy?: boolean;
   otherPregnancyDetails?: string;
   totalKidsBorn?: number;
+  previousPregnancies?: PreviousPregnancy[];
 }
 
 export interface Baby {
@@ -269,6 +294,9 @@ export interface HealthCheck {
   notes?: string;
   recommendations?: string;
   nextCheckDate?: string;
+  referredToHospital?: string;
+  photoUrl?: string;
+  isActive?: boolean;
   createdAt: string;
 }
 
@@ -302,6 +330,7 @@ export interface HealthCheckRequest {
   notes?: string;
   recommendations?: string;
   nextCheckDate?: string;
+  referredToHospital?: string;
   // Follow-up scheduling
   scheduleFollowUp?: boolean;
   followUpDate?: string;
@@ -322,7 +351,11 @@ export interface Consultation {
   endedAt?: string;
   videoRoomId?: string;
   videoRoomUrl?: string;
+  teleconsultationPlatform?: TeleconsultationPlatform;
+  teleconsultationLink?: string;
   chiefComplaint?: string;
+  historyOfPresentIllness?: string;
+  examinationFindings?: string;
   diagnosis?: string;
   treatmentPlan?: string;
   prescriptions?: string;
@@ -332,15 +365,19 @@ export interface Consultation {
   followUpRequired: boolean;
   followUpDate?: string;
   notes?: string;
+  cancellationReason?: string;
+  cancelledBy?: string;
   createdAt: string;
 }
 
 export interface ConsultationRequest {
-  id?: number; // Include ID for updates, optional for creation
+  id?: number;
   patientId: number;
   doctorId: number;
   type: ConsultationType;
   scheduledAt: string;
+  teleconsultationPlatform?: TeleconsultationPlatform;
+  teleconsultationLink?: string;
   chiefComplaint?: string;
   notes?: string;
 }
@@ -364,6 +401,7 @@ export interface FollowUp {
   requiresDoctorConsultation: boolean;
   requiresImmediateAttention: boolean;
   notes?: string;
+  photoUrl?: string;
   nextFollowUpDate?: string;
   createdAt: string;
 }

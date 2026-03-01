@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -39,7 +40,20 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
+    // Separate security filter chain for uploads - no JWT filter, completely open
     @Bean
+    @Order(1)
+    public SecurityFilterChain uploadsSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/uploads/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
@@ -51,7 +65,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/uploads/**").permitAll()
+                // Note: /uploads/** is handled by uploadsSecurityFilterChain
 
                 // User endpoints - doctors list is accessible to all authenticated users
                 .requestMatchers(HttpMethod.GET, "/v1/users/doctors").authenticated()

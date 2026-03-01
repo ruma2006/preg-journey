@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -124,6 +125,20 @@ public class HealthCheck extends BaseEntity {
 
     @Column(name = "recommendations", columnDefinition = "TEXT")
     private String recommendations;
+
+    // Referral Information
+    @Column(name = "referred_to_hospital")
+    private String referredToHospital;
+
+    // Photo documentation
+    @Column(name = "photo_url")
+    private String photoUrl;
+
+    // Soft delete flag (null is treated as true for backward compatibility)
+    @Column(name = "is_active")
+    @ColumnDefault("true")
+    @Builder.Default
+    private Boolean isActive = true;
 
     // Performed by
     @ManyToOne(fetch = FetchType.LAZY)

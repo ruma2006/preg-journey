@@ -2,6 +2,7 @@ package com.ammarakshitha.model;
 
 import com.ammarakshitha.model.enums.ConsultationStatus;
 import com.ammarakshitha.model.enums.ConsultationType;
+import com.ammarakshitha.model.enums.TeleconsultationPlatform;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -55,6 +56,14 @@ public class Consultation extends BaseEntity {
 
     @Column(name = "video_room_url")
     private String videoRoomUrl;
+
+    // Teleconsultation platform details
+    @Enumerated(EnumType.STRING)
+    @Column(name = "teleconsultation_platform")
+    private TeleconsultationPlatform teleconsultationPlatform;
+
+    @Column(name = "teleconsultation_link")
+    private String teleconsultationLink;
 
     // Consultation details
     @Column(name = "chief_complaint", columnDefinition = "TEXT")

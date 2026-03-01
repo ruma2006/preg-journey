@@ -153,6 +153,10 @@ public class Patient extends BaseEntity {
     @Column(name = "total_kids_born")
     private Integer totalKidsBorn;
 
+    // JSON string storing detailed previous pregnancy information
+    @Column(name = "previous_pregnancies_json", columnDefinition = "TEXT")
+    private String previousPregnanciesJson;
+
     @Column(name = "registration_date", nullable = false)
     @Builder.Default
     private LocalDate registrationDate = LocalDate.now();

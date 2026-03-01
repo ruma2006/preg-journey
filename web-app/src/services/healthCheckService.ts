@@ -50,4 +50,19 @@ export const healthCheckService = {
     const response = await api.get<ApiResponse<number>>('/health-checks/stats/today')
     return response.data.data
   },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`/health-checks/${id}`)
+  },
+
+  uploadPhoto: async (id: number, file: File): Promise<HealthCheck> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post<ApiResponse<HealthCheck>>(`/health-checks/${id}/photo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data.data
+  },
 }

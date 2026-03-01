@@ -1,6 +1,7 @@
 package com.ammarakshitha.dto;
 
 import com.ammarakshitha.model.enums.ConsultationType;
+import com.ammarakshitha.model.enums.TeleconsultationPlatform;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,8 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConsultationRequest {
-	
-	private Long id; // For updates, null for new consultations
+
+    private Long id; // For updates
 
     @NotNull(message = "Patient ID is required")
     private Long patientId;
@@ -28,6 +29,10 @@ public class ConsultationRequest {
 
     @NotNull(message = "Scheduled time is required")
     private LocalDateTime scheduledAt;
+
+    // Teleconsultation details
+    private TeleconsultationPlatform teleconsultationPlatform;
+    private String teleconsultationLink;
 
     private String chiefComplaint;
     private String historyOfPresentIllness;

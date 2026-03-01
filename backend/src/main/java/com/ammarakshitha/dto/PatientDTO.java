@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -48,6 +49,8 @@ public class PatientDTO {
     private Boolean hadOtherPregnancy;
     private String otherPregnancyDetails;
     private Integer totalKidsBorn;
+    private List<PreviousPregnancyDTO> previousPregnancies;
+    private String previousPregnanciesJson;
     private LocalDate registrationDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

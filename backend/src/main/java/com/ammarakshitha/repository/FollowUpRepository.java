@@ -90,4 +90,11 @@ public interface FollowUpRepository extends JpaRepository<FollowUp, Long> {
 
     // Date range query for calendar heatmap
     List<FollowUp> findByScheduledDateBetween(LocalDate startDate, LocalDate endDate);
+
+    // Completed/Past follow-ups (status is COMPLETED, NO_ANSWER, RESCHEDULED, or CANCELLED)
+    @Query("SELECT f FROM FollowUp f WHERE f.status IN ('COMPLETED', 'NO_ANSWER', 'RESCHEDULED', 'CANCELLED') ORDER BY f.scheduledDate DESC, f.callCompletedAt DESC")
+    List<FollowUp> findPastFollowUps();
+
+    // Delete follow-up by ID
+    void deleteById(Long id);
 }

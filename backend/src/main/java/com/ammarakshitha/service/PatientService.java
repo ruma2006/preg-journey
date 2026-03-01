@@ -5,6 +5,7 @@ import com.ammarakshitha.dto.DeliveryCompletionRequest;
 import com.ammarakshitha.dto.PatientDTO;
 import com.ammarakshitha.dto.PatientRegistrationRequest;
 import com.ammarakshitha.dto.PatientSearchRequest;
+import com.ammarakshitha.dto.PreviousPregnancyDTO;
 import com.ammarakshitha.exception.DuplicateResourceException;
 import com.ammarakshitha.exception.ResourceNotFoundException;
 import com.ammarakshitha.model.Baby;
@@ -15,6 +16,8 @@ import com.ammarakshitha.model.enums.PatientStatus;
 import com.ammarakshitha.model.enums.RiskLevel;
 import com.ammarakshitha.repository.PatientRepository;
 import com.ammarakshitha.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,6 +38,7 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     public Patient registerPatient(PatientRegistrationRequest request, Long registeredByUserId) {
         log.info("Registering new patient: {}", request.getName());
@@ -44,9 +48,17 @@ public class PatientService {
             aadhaarNumber = null;
         }
 
-        // Check for duplicates
-        if (aadhaarNumber != null && patientRepository.existsByAadhaarNumber(aadhaarNumber)) {
-            throw new DuplicateResourceException("Patient with Aadhaar " + aadhaarNumber + " already exists");
+        // Check for duplicates - only check against ACTIVE patients
+        // This allows re-registration after abortion/delivery (when previous record is DISCHARGED/INACTIVE)
+        if (aadhaarNumber != null && patientRepository.existsActivePatientByAadhaarNumber(aadhaarNumber)) {
+            throw new DuplicateResourceException("An active patient with Aadhaar " + aadhaarNumber + " already exists. Please update the existing record or mark it as inactive first.");
+        }
+
+        // Additional check: If same mobile number and same LMP date, it's likely a duplicate
+        if (request.getLmpDate() != null && request.getMobileNumber() != null) {
+            if (patientRepository.existsActivePatientByMobileAndLmpDate(request.getMobileNumber(), request.getLmpDate())) {
+                throw new DuplicateResourceException("An active patient with the same mobile number and LMP date already exists. This may be a duplicate registration.");
+            }
         }
 
         // Generate unique Mother ID
@@ -89,6 +101,7 @@ public class PatientService {
                 .hadOtherPregnancy(request.getHadOtherPregnancy())
                 .otherPregnancyDetails(request.getOtherPregnancyDetails())
                 .totalKidsBorn(request.getTotalKidsBorn())
+                .previousPregnanciesJson(convertPreviousPregnancyToJson(request.getPreviousPregnancies()))
                 .registrationDate(LocalDate.now())
                 .registeredBy(registeredBy)
                 .status(PatientStatus.ACTIVE)
@@ -115,6 +128,18 @@ public class PatientService {
         }
         // Naegele's rule: EDD = LMP + 280 days (40 weeks)
         return lmpDate.plusDays(280);
+    }
+
+    private String convertPreviousPregnancyToJson(List<PreviousPregnancyDTO> previousPregnancies) {
+        if (previousPregnancies == null || previousPregnancies.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(previousPregnancies);
+        } catch (JsonProcessingException e) {
+            log.error("Error converting previous pregnancies to JSON", e);
+            return null;
+        }
     }
 
     @Transactional(readOnly = true)
@@ -240,6 +265,10 @@ public class PatientService {
         }
         if (updateRequest.getTotalKidsBorn() != null) {
             patient.setTotalKidsBorn(updateRequest.getTotalKidsBorn());
+        }
+        // Handle previous pregnancies JSON
+        if (updateRequest.getPreviousPregnancies() != null) {
+            patient.setPreviousPregnanciesJson(convertPreviousPregnancyToJson(updateRequest.getPreviousPregnancies()));
         }
         // Handle LMP date update and recalculate EDD
         if (updateRequest.getLmpDate() != null) {

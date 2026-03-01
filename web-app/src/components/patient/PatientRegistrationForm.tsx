@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Button, Input, Select } from '@/components/ui'
 import { patientService } from '@/services'
-import { PatientRegistrationRequest } from '@/types'
+import { PatientRegistrationRequest, PreviousPregnancy, PregnancyOutcome, DeliveryType } from '@/types'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
@@ -8,6 +9,32 @@ import toast from 'react-hot-toast'
 interface PatientRegistrationFormProps {
   onSuccess: () => void
 }
+
+// Dropdown options for gravida/para
+const PREGNANCY_COUNT_OPTIONS = Array.from({ length: 11 }, (_, i) => ({
+  value: String(i),
+  label: String(i),
+}))
+
+const PREGNANCY_OUTCOME_OPTIONS = [
+  { value: 'LIVE_BIRTH', label: 'Live Birth' },
+  { value: 'ABORTION', label: 'Abortion' },
+  { value: 'STILLBIRTH', label: 'Stillbirth' },
+  { value: 'MISCARRIAGE', label: 'Miscarriage' },
+  { value: 'ECTOPIC', label: 'Ectopic Pregnancy' },
+]
+
+const DELIVERY_TYPE_OPTIONS = [
+  { value: 'NORMAL', label: 'Normal Delivery' },
+  { value: 'CESAREAN', label: 'C-Section' },
+  { value: 'ASSISTED', label: 'Assisted Delivery' },
+  { value: 'INDUCED', label: 'Induced Delivery' },
+]
+
+const BABY_GENDER_OPTIONS = [
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+]
 
 const BLOOD_GROUPS = [
   { value: 'A+', label: 'A+' },
@@ -40,7 +67,45 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
 
   const lmpDate = watch('lmpDate')
   const para = watch('para')
-  const hadOtherPregnancy = watch('hadOtherPregnancy')
+
+  // State for dynamic previous pregnancy details
+  const [previousPregnancies, setPreviousPregnancies] = useState<PreviousPregnancy[]>([])
+
+  // Update previous pregnancies array when para (number of deliveries) changes
+  useEffect(() => {
+    const paraNum = Number(para) || 0
+    // Number of previous deliveries = para (each delivery needs details)
+    const deliveryCount = Math.max(0, paraNum)
+
+    setPreviousPregnancies(prev => {
+      if (prev.length === deliveryCount) return prev
+
+      if (prev.length < deliveryCount) {
+        // Add new entries
+        const newEntries: PreviousPregnancy[] = []
+        for (let i = prev.length; i < deliveryCount; i++) {
+          newEntries.push({
+            pregnancyNumber: i + 1,
+            outcome: PregnancyOutcome.LIVE_BIRTH,
+            deliveryType: DeliveryType.NORMAL,
+            babyGender: undefined,
+          })
+        }
+        return [...prev, ...newEntries]
+      } else {
+        // Remove extra entries
+        return prev.slice(0, deliveryCount)
+      }
+    })
+  }, [para])
+
+  const updatePreviousPregnancy = (index: number, field: keyof PreviousPregnancy, value: string) => {
+    setPreviousPregnancies(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
+  }
 
   // Auto-calculate EDD when LMP changes (280 days from LMP)
   const calculateEDD = (lmp: string) => {
@@ -65,7 +130,12 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
   })
 
   const onSubmit = (data: PatientRegistrationRequest) => {
-    mutation.mutate(data)
+    // Include previous pregnancies in the submission
+    const submissionData = {
+      ...data,
+      previousPregnancies: previousPregnancies.length > 0 ? previousPregnancies : undefined,
+    }
+    mutation.mutate(submissionData)
   }
 
   // Validation functions
@@ -275,23 +345,21 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
             placeholder="Select blood group"
             {...register('bloodGroup')}
           />
-          <Input
-            label="Gravida (No. of Pregnancies)"
-            type="number"
-            min={0}
+          <Select
+            label="Gravida (No. of Pregnancies including current)"
+            options={PREGNANCY_COUNT_OPTIONS}
+            placeholder="Select"
             {...register('gravida', {
-              min: { value: 0, message: 'Cannot be negative' },
-              max: { value: 20, message: 'Value seems too high' }
+              valueAsNumber: true,
             })}
             error={errors.gravida?.message}
           />
-          <Input
+          <Select
             label="Para (No. of Deliveries)"
-            type="number"
-            min={0}
+            options={PREGNANCY_COUNT_OPTIONS}
+            placeholder="Select"
             {...register('para', {
-              min: { value: 0, message: 'Cannot be negative' },
-              max: { value: 20, message: 'Value seems too high' }
+              valueAsNumber: true,
             })}
             error={errors.para?.message}
           />
@@ -309,102 +377,74 @@ export default function PatientRegistrationForm({ onSuccess }: PatientRegistrati
             </p>
           </div>
         )}
+
+        {/* Dynamic Previous Delivery Details */}
+        {previousPregnancies.length > 0 && (
+          <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+            <h4 className="text-sm font-medium text-purple-900 mb-4">
+              Previous Delivery Details ({previousPregnancies.length} {previousPregnancies.length === 1 ? 'delivery' : 'deliveries'})
+            </h4>
+            <div className="space-y-4">
+              {previousPregnancies.map((pregnancy, index) => (
+                <div key={index} className="p-3 bg-white rounded-lg border border-purple-100">
+                  <p className="text-sm font-medium text-purple-800 mb-3">
+                    Delivery #{pregnancy.pregnancyNumber}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="label text-xs">Outcome</label>
+                      <select
+                        value={pregnancy.outcome}
+                        onChange={(e) => updatePreviousPregnancy(index, 'outcome', e.target.value)}
+                        className="input text-sm"
+                      >
+                        {PREGNANCY_OUTCOME_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {pregnancy.outcome === 'LIVE_BIRTH' && (
+                      <>
+                        <div>
+                          <label className="label text-xs">Delivery Type</label>
+                          <select
+                            value={pregnancy.deliveryType || ''}
+                            onChange={(e) => updatePreviousPregnancy(index, 'deliveryType', e.target.value)}
+                            className="input text-sm"
+                          >
+                            <option value="">Select</option>
+                            {DELIVERY_TYPE_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label text-xs">Baby Gender</label>
+                          <select
+                            value={pregnancy.babyGender || ''}
+                            onChange={(e) => updatePreviousPregnancy(index, 'babyGender', e.target.value)}
+                            className="input text-sm"
+                          >
+                            <option value="">Select</option>
+                            {BABY_GENDER_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Medical History */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Medical History</h3>
-        
-        {/* Previous Pregnancy Details - Show only when para >= 1 */}
-        {para && parseInt(String(para)) >= 1 && (
-          <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <h4 className="text-sm font-medium text-purple-900 mb-3">Previous Pregnancy Details</h4>
-            <p className="text-xs text-purple-700 mb-3">
-              Please select all types of previous pregnancies (you can select multiple)
-            </p>
-            
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="hadNormalDelivery"
-                    {...register('hadNormalDelivery')}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="hadNormalDelivery" className="text-sm text-gray-700">
-                    Normal Delivery
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="hadCSectionDelivery"
-                    {...register('hadCSectionDelivery')}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="hadCSectionDelivery" className="text-sm text-gray-700">
-                    C-Section
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="hadAbortion"
-                    {...register('hadAbortion')}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="hadAbortion" className="text-sm text-gray-700">
-                    Abortion
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="hadOtherPregnancy"
-                    {...register('hadOtherPregnancy')}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="hadOtherPregnancy" className="text-sm text-gray-700">
-                    Other
-                  </label>
-                </div>
-              </div>
-
-              {hadOtherPregnancy && (
-                <div>
-                  <Input
-                    label="Specify Other Pregnancy Type"
-                    placeholder="Please specify..."
-                    {...register('otherPregnancyDetails')}
-                    maxLength={200}
-                  />
-                </div>
-              )}
-
-              <div>
-                <Input
-                  label="Total Number of Kids Born"
-                  type="number"
-                  min={0}
-                  max={4}
-                  placeholder="Including twins/multiples from previous pregnancies"
-                  {...register('totalKidsBorn', {
-                    min: { value: 0, message: 'Cannot be negative' },
-                    max: { value: 4, message: 'Maximum 4 kids allowed' }
-                  })}
-                  error={errors.totalKidsBorn?.message}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter total children born from all previous pregnancies (max 4)
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-4">
           <div className="flex items-center gap-3">

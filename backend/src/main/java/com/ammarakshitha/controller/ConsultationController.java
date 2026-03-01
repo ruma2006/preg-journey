@@ -35,20 +35,22 @@ public class ConsultationController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(consultation, "Consultation scheduled successfully"));
     }
-    
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete consultation by ID")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'MEDICAL_OFFICER', 'MCH_OFFICER', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<String>> deleteConsultationById(@PathVariable Long id) {
-        consultationService.deleteConsultationById(id);
-        return ResponseEntity.ok(ApiResponse.success("Consultation deleted successfully"));
-    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get consultation by ID")
     public ResponseEntity<ApiResponse<Consultation>> getConsultationById(@PathVariable Long id) {
         Consultation consultation = consultationService.getConsultationById(id);
         return ResponseEntity.ok(ApiResponse.success(consultation));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update a consultation")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HELP_DESK', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<Consultation>> updateConsultation(
+            @PathVariable Long id,
+            @RequestBody ConsultationRequest request) {
+        Consultation consultation = consultationService.updateConsultation(id, request);
+        return ResponseEntity.ok(ApiResponse.success(consultation, "Consultation updated successfully"));
     }
 
     @PostMapping("/{id}/start")

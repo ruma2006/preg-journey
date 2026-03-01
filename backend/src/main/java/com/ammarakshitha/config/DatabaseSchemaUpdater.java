@@ -33,6 +33,38 @@ public class DatabaseSchemaUpdater implements ApplicationRunner {
         } else {
             log.debug("Skipping Aadhaar nullable migration for unsupported DB: {}", databaseProduct);
         }
+
+        // Fix photo URLs to include /api prefix
+        fixPhotoUrls();
+    }
+
+    private void fixPhotoUrls() {
+        // Update health_checks photo_url to include /api prefix
+        int healthChecksUpdated = runUpdate(
+            "UPDATE health_checks SET photo_url = CONCAT('/api', photo_url) " +
+            "WHERE photo_url IS NOT NULL AND photo_url LIKE '/uploads/%' AND photo_url NOT LIKE '/api/%'"
+        );
+        if (healthChecksUpdated > 0) {
+            log.info("Updated {} health check photo URLs to include /api prefix", healthChecksUpdated);
+        }
+
+        // Update follow_ups photo_url to include /api prefix
+        int followUpsUpdated = runUpdate(
+            "UPDATE follow_ups SET photo_url = CONCAT('/api', photo_url) " +
+            "WHERE photo_url IS NOT NULL AND photo_url LIKE '/uploads/%' AND photo_url NOT LIKE '/api/%'"
+        );
+        if (followUpsUpdated > 0) {
+            log.info("Updated {} follow-up photo URLs to include /api prefix", followUpsUpdated);
+        }
+    }
+
+    private int runUpdate(String sql) {
+        try {
+            return jdbcTemplate.update(sql);
+        } catch (Exception ex) {
+            log.debug("Update skipped or failed: {}", sql, ex);
+            return 0;
+        }
     }
 
     private String getDatabaseProductName() {

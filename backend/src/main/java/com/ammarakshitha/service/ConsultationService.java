@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -50,33 +49,6 @@ public class ConsultationService {
         if (doctor.getRole() != UserRole.DOCTOR) {
             throw new BusinessException("Assigned user is not a doctor");
         }
-        Consultation consultation = null;
-        if(request.getId() != null) {
-        	log.info("Updating existing consultation with ID: {}", request.getId());
-			// If ID is provided, this is an update operation. Validate existing consultation.
-			Optional<Consultation> existingConsultation = consultationRepository.findById(request.getId());
-			if(existingConsultation.isEmpty()) {
-				throw new ResourceNotFoundException("Consultation not found for update");
-			}
-			consultation = existingConsultation.get();
-			consultation.setPatient(patient);
-			consultation.setDoctor(doctor);
-			consultation.setType(request.getType());
-			consultation.setScheduledAt(request.getScheduledAt());
-			consultation.setChiefComplaint(request.getChiefComplaint());
-			consultation.setNotes(request.getNotes());
-        }
-        else {
-        	consultation = Consultation.builder()
-                    .patient(patient)
-                    .doctor(doctor)
-                    .type(request.getType())
-                    .status(ConsultationStatus.SCHEDULED)
-                    .scheduledAt(request.getScheduledAt())
-                    .chiefComplaint(request.getChiefComplaint())
-                    .notes(request.getNotes())
-                    .build();
-        }
 
         // Check for scheduling conflicts
         List<Consultation> existingConsultations = consultationRepository
@@ -89,11 +61,29 @@ public class ConsultationService {
             throw new BusinessException("Doctor has a scheduling conflict at the requested time");
         }
 
-        // Generate video room for teleconsultation
+        Consultation consultation = Consultation.builder()
+                .patient(patient)
+                .doctor(doctor)
+                .type(request.getType())
+                .status(ConsultationStatus.SCHEDULED)
+                .scheduledAt(request.getScheduledAt())
+                .chiefComplaint(request.getChiefComplaint())
+                .notes(request.getNotes())
+                .teleconsultationPlatform(request.getTeleconsultationPlatform())
+                .teleconsultationLink(request.getTeleconsultationLink())
+                .build();
+
+        // For teleconsultation: use provided link or generate video room
         if (request.getType() == ConsultationType.TELECONSULTATION) {
-            String roomId = generateVideoRoomId();
-            consultation.setVideoRoomId(roomId);
-            consultation.setVideoRoomUrl("/video/room/" + roomId);
+            if (request.getTeleconsultationLink() != null && !request.getTeleconsultationLink().isBlank()) {
+                // Use the provided external link
+                consultation.setVideoRoomUrl(request.getTeleconsultationLink());
+            } else {
+                // Generate internal video room
+                String roomId = generateVideoRoomId();
+                consultation.setVideoRoomId(roomId);
+                consultation.setVideoRoomUrl("/video/room/" + roomId);
+            }
         }
 
         Consultation savedConsultation = consultationRepository.save(consultation);
@@ -104,6 +94,60 @@ public class ConsultationService {
 
     private String generateVideoRoomId() {
         return "AR-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase();
+    }
+
+    public Consultation updateConsultation(Long consultationId, ConsultationRequest request) {
+        log.info("Updating consultation: {}", consultationId);
+
+        Consultation consultation = getConsultationById(consultationId);
+
+        if (consultation.getStatus() == ConsultationStatus.COMPLETED ||
+            consultation.getStatus() == ConsultationStatus.CANCELLED) {
+            throw new BusinessException("Cannot update a completed or cancelled consultation");
+        }
+
+        // Update doctor if changed
+        if (request.getDoctorId() != null && !request.getDoctorId().equals(consultation.getDoctor().getId())) {
+            User doctor = userRepository.findById(request.getDoctorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+            if (doctor.getRole() != UserRole.DOCTOR) {
+                throw new BusinessException("Assigned user is not a doctor");
+            }
+            consultation.setDoctor(doctor);
+        }
+
+        // Update fields
+        if (request.getType() != null) {
+            consultation.setType(request.getType());
+        }
+        if (request.getScheduledAt() != null) {
+            consultation.setScheduledAt(request.getScheduledAt());
+        }
+        if (request.getChiefComplaint() != null) {
+            consultation.setChiefComplaint(request.getChiefComplaint());
+        }
+        if (request.getNotes() != null) {
+            consultation.setNotes(request.getNotes());
+        }
+
+        // Update teleconsultation details
+        consultation.setTeleconsultationPlatform(request.getTeleconsultationPlatform());
+        consultation.setTeleconsultationLink(request.getTeleconsultationLink());
+
+        // Update video URL for teleconsultation
+        if (request.getType() == ConsultationType.TELECONSULTATION) {
+            if (request.getTeleconsultationLink() != null && !request.getTeleconsultationLink().isBlank()) {
+                consultation.setVideoRoomUrl(request.getTeleconsultationLink());
+            } else if (consultation.getVideoRoomId() == null) {
+                String roomId = generateVideoRoomId();
+                consultation.setVideoRoomId(roomId);
+                consultation.setVideoRoomUrl("/video/room/" + roomId);
+            }
+        }
+
+        Consultation savedConsultation = consultationRepository.save(consultation);
+        log.info("Consultation updated: {}", consultationId);
+        return savedConsultation;
     }
 
     public Consultation startConsultation(Long consultationId) {
@@ -170,12 +214,6 @@ public class ConsultationService {
         log.info("Follow-up created for consultation: {}", consultation.getId());
     }
 
-    public void deleteConsultationById(Long consultationId) {
-		Consultation consultation = getConsultationById(consultationId);
-		consultationRepository.delete(consultation);
-		log.info("Consultation deleted: {}", consultationId);
-	}
-    
     public Consultation cancelConsultation(Long consultationId, String reason, String cancelledBy) {
         Consultation consultation = getConsultationById(consultationId);
 

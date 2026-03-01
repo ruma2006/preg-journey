@@ -79,4 +79,22 @@ export const followUpService = {
     const response = await api.get<ApiResponse<FollowUp[]>>('/follow-ups/all')
     return response.data.data
   },
+
+  getPast: async (): Promise<FollowUp[]> => {
+    const response = await api.get<ApiResponse<FollowUp[]>>('/follow-ups/past')
+    return response.data.data
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`/follow-ups/${id}`)
+  },
+
+  uploadPhoto: async (id: number, file: File): Promise<FollowUp> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post<ApiResponse<FollowUp>>(`/follow-ups/${id}/photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data.data
+  },
 }
